@@ -7,7 +7,8 @@ You can switch between Chinese and English documents in the bottom-left corner o
    :maxdepth: 2
    :caption: Get Started
 
-   install.md
+   install.rst
+   old-install.md
    demo.md
 
 .. toctree::
