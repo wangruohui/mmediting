@@ -107,7 +107,7 @@ See `MMCV installation guide`_ for more information.
 **Step 4**.
 Install MMEditing
 
-To make full utilization of configuration files and tools,
+To make full utilization of configuration files and useful tools,
 we recommend installing MMEditing from source codes.
 
 .. code-block:: sh
@@ -162,7 +162,7 @@ Install the GPU version of PyTorch and torchvision
 
    conda install pytorch torchvision cudatoolkit=10.2 -c pytorch
 
-   # or "pip3 install torch==1.10.2+cu102 torchvision==0.11.3+cu102 -f https://download.pytorch.org/whl/cu102/torch_stable.html"
+   # or "pip install torch==1.10.2+cu102 torchvision==0.11.3+cu102 -f https://download.pytorch.org/whl/cu102/torch_stable.html"
 
 
 .. note::
@@ -172,9 +172,10 @@ Install the GPU version of PyTorch and torchvision
    .. code-block:: sh
 
       conda install pytorch torchvision cudatoolkit=11.3 -c pytorch
-      # or pip3 install torch==1.10.2+cu113 torchvision==0.11.3+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
 
-   Please check `this table`_ to make sure `NVIDIA driver`_ version is sufficient.
+      # or pip install torch==1.10.2+cu113 torchvision==0.11.3+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
+
+   Please check `this table`_ for minimum driver versions required for specific CUDA versions.
    Usually, the latest driver works well.
 
 
@@ -202,7 +203,7 @@ Install pre-compiled MMCV for GPUs
 
    The link to MMCV depends on the *version* of PyTorch and the *CUDA version* of PyTorch.
    The above link is for **PyTorch 1.10.x** and **CUDA 10.2**.
-   If you use a different version and CUDA version of PyTorch, you need to change the link accordingly.
+   If you use a different version of PyTorch, you need to change the link accordingly.
 
    E.g. ``https://download.openmmlab.com/mmcv/dist/`` **cu101** ``/`` **torch1.8** ``/index.html`` for **PyTorch 1.8.x** with CUDA 10.1.
 
@@ -212,7 +213,7 @@ See `MMCV installation guide`_ for more information.
 **Step 4**.
 Install MMEditing
 
-To make full utilization of configuration files and tools,
+To make full utilization of configuration files and useful tools,
 we recommend installing MMEditing from source codes.
 
 .. code-block:: sh
@@ -220,6 +221,7 @@ we recommend installing MMEditing from source codes.
    git clone https://github.com/open-mmlab/mmediting.git
    cd mmediting
    pip install -v -e .
+
    # or "pip install -v -e .[all]" to install full dependencies and enable more features
 
 
@@ -228,7 +230,6 @@ Verify installation
 
 As a simple test, switch to another directory (such as ``/home``) and import ``mmedit`` in Python.
 For example,
-
 
 .. code-block:: sh
 
