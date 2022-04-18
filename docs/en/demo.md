@@ -50,10 +50,11 @@ If `--imshow` is specified, the demo will also show image with opencv. Examples:
 ```shell
 python demo/matting_demo.py \
     configs/mattors/dim/dim_stage3_v16_pln_1x1_1000k_comp1k.py \
-    work_dirs/dim_stage3/latest.pth \
+    https://download.openmmlab.com/mmediting/mattors/dim/dim_stage3_v16_pln_1x1_1000k_comp1k_SAD-50.6_20200609_111851-647f24b6.pth \
     tests/data/merged/GT05.jpg \
     tests/data/trimap/GT05.png \
-    tests/data/pred/GT05.png
+    tests/data/pred/GT05.png \
+    --imshow
 ```
 
 The predicted alpha matte will be save in `tests/data/pred/GT05.png`.
@@ -78,7 +79,7 @@ If `--imshow` is specified, the demo will also show image with opencv. Examples:
 ```shell
 python demo/restoration_demo.py \
     configs/restorers/esrgan/esrgan_x4c64b23g32_g1_400k_div2k.py \
-    work_dirs/esrgan_x4c64b23g32_g1_400k_div2k/latest.pth \
+    https://download.openmmlab.com/mmediting/restorers/esrgan/esrgan_x4c64b23g32_1x16_400k_div2k_20200508-f8ccaf3b.pth \
     tests/data/lq/baboon_x4.png \
     demo/demo_out_baboon.png
 ```
