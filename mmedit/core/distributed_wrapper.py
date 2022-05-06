@@ -42,7 +42,7 @@ class DistributedDataParallelWrapper(nn.Module):
         find_unused_parameters (bool, optional): Same as that in
             `torch.nn.parallel.distributed.DistributedDataParallel`.
             Traverse the autograd graph of all tensors contained in returned
-            value of the wrapped module’s forward function. Defaults to False.
+            value of the wrapped module's forward function. Defaults to False.
         kwargs (dict): Other arguments used in
             `torch.nn.parallel.distributed.DistributedDataParallel`.
     """
