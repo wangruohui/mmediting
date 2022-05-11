@@ -1,5 +1,5 @@
 variables:
-  PYTORCH_IMAGE: registry.sensetime.com/openmmlab/pytorch18-cu102-mmcv-transforms:latest
+  PYTORCH_IMAGE: registry.sensetime.com/openmmlab/pytorch18-cu102-mmcv-transforms:update-repo
 
 stages:
   - linting
@@ -7,6 +7,7 @@ stages:
   - deploy
 
 before_script:
+  - . /root/scripts/set_envs.sh
   - echo $PATH
   - gcc --version
   - nvcc --version
