@@ -21,6 +21,6 @@ mmediting
 ├── data
 │   ├── celeba-hq
 │   │   ├── train
-|   |   ├── val
+│   │   ├── val
 
 ```

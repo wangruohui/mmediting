@@ -22,6 +22,6 @@ mmediting
 ├── data
 │   ├── paris_street_view
 │   │   ├── train
-|   |   ├── val
+│   │   ├── val
 
 ```

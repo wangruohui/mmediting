@@ -24,7 +24,7 @@ mmediting
 │   ├── places
 │   │   ├── test_set
 │   │   ├── train_set
-|   |   ├── meta
-|   |   |    ├── Places365_train.txt
-|   |   |    ├── Places365_val.txt
+│   │   ├── meta
+│   │   │    ├── Places365_train.txt
+│   │   │    ├── Places365_val.txt
 ```
