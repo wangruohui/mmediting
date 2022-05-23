@@ -1,22 +1,28 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import logging
 import os.path as osp
-from abc import abstractmethod
+from abc import ABCMeta, abstractmethod
 from pathlib import Path
+from typing import List, Tuple, Union, Dict
+from mmengine.utils import stack_batch
+from mmedit.data_element import PixelData
 
+from mmedit.data_element import EditDataSample
 import mmcv
 import numpy as np
+import torch
 from mmcv import ConfigDict
 from mmcv.utils import print_log
-
-from mmedit.core.evaluation import connectivity, gradient_error, mse, sad
+import torch
+import torch.nn.functional as F
+# from mmedit.core.evaluation import connectivity, gradient_error, mse, sad
+# from ..base import BaseModel
+# from ..builder import build_backbone, build_component
 from mmedit.registry import MODELS
-from ..base import BaseModel
-from ..builder import build_backbone, build_component
+from mmengine import BaseModel
 
 
-@MODELS.register_module()
-class BaseMattor(BaseModel):
+class BaseMattor(BaseModel, metaclass=ABCMeta):
     """Base class for matting model.
 
     A matting model must contain a backbone which produces `alpha`, a dense
@@ -37,31 +43,35 @@ class BaseMattor(BaseModel):
             refiner, ``train_refiner`` should be specified.
         pretrained (str): Path of pretrained model.
     """
-    allowed_metrics = {
-        'SAD': sad,
-        'MattingMSE': mse,
-        'GRAD': gradient_error,
-        'CONN': connectivity
-    }
+
+    # allowed_metrics = {
+    #     'SAD': sad,
+    #     'MSE': mse,
+    #     'GRAD': gradient_error,
+    #     'CONN': connectivity
+    # }
 
     def __init__(self,
                  backbone,
                  refiner=None,
+                 preprocess_cfg=None,
                  train_cfg=None,
                  test_cfg=None,
                  pretrained=None):
-        super().__init__()
+        super().__init__(preprocess_cfg=preprocess_cfg)
 
         self.train_cfg = train_cfg if train_cfg is not None else ConfigDict()
         self.test_cfg = test_cfg if test_cfg is not None else ConfigDict()
+        self.preprocess_cfg = preprocess_cfg if preprocess_cfg else ConfigDict(
+        )
 
-        self.backbone = build_backbone(backbone)
+        self.backbone = MODELS.build(backbone)
         # build refiner if it's not None.
         if refiner is None:
             self.train_cfg['train_refiner'] = False
             self.test_cfg['refine'] = False
         else:
-            self.refiner = build_component(refiner)
+            self.refiner = MODELS.build(refiner)
 
         # if argument train_cfg is not None, validate if the config is proper.
         if train_cfg is not None:
@@ -76,15 +86,15 @@ class BaseMattor(BaseModel):
                 self.freeze_backbone()
 
         # validate if test config is proper
-        if not hasattr(self.test_cfg, 'metrics'):
-            raise KeyError('Missing key "metrics" in test_cfg')
+        # if not hasattr(self.test_cfg, 'metrics'):
+        #     raise KeyError('Missing key "metrics" in test_cfg')
 
-        if mmcv.is_list_of(self.test_cfg.metrics, str):
-            for metric in self.test_cfg.metrics:
-                if metric not in self.allowed_metrics:
-                    raise KeyError(f'metric {metric} is not supported')
-        elif self.test_cfg.metrics is not None:
-            raise TypeError('metrics must be None or a list of str')
+        # if mmcv.is_list_of(self.test_cfg.metrics, str):
+        #     for metric in self.test_cfg.metrics:
+        #         if metric not in self.allowed_metrics:
+        #             raise KeyError(f'metric {metric} is not supported')
+        # elif self.test_cfg.metrics is not None:
+        #     raise TypeError('metrics must be None or a list of str')
 
         self.init_weights(pretrained)
 
@@ -114,7 +124,64 @@ class BaseMattor(BaseModel):
         if self.with_refiner:
             self.refiner.init_weights()
 
-    def restore_shape(self, pred_alpha, meta):
+    def preprocess(self, data: List[dict], training: bool
+                   ) -> Tuple[torch.Tensor, List[EditDataSample]]:
+
+        batch_inputs, batch_data_samples = super().preprocess(data, training)
+
+        batch_trimap = []
+        for ds in batch_data_samples:
+            batch_trimap.append(ds.trimap.data)
+            del ds.trimap
+        batch_trimap = torch.stack(batch_trimap)
+
+        assert batch_inputs.ndim == batch_trimap.ndim == 4
+        assert batch_inputs.shape[-2:] == batch_trimap.shape[-2:], f"""
+            Expect batch_merged.shape[-2:] == batch_trimap.shape[-2:],
+            but got {batch_inputs.shape[-2:]} vs {batch_trimap.shape[-2:]}
+            """
+
+        # Currently, all model do this concat at the start of forwarding
+        # and data_sample is a very complex data structure
+        # so this is a simple work-around to make codes simpler
+        batch_concat = torch.cat((batch_inputs, batch_trimap / 255.), dim=1)
+
+        if not training:
+            # Pad the images to align with network downsample factor for testing
+            batch_concat, pad_width = self.pad(batch_concat)
+
+            for ds in batch_data_samples:
+                ds.set_field(
+                    name='pad_width', value=pad_width, field_type='metainfo')
+        #         print(ds)
+
+        # print(batch_concat.shape)
+        # print(batch_concat)
+
+        return batch_concat, batch_data_samples
+
+    def pad(self, data):
+        """Pad the images to align with network downsample factor for testing."""
+
+        # ds_factor should be a property of a given model
+        ds_factor = getattr(self, "ds_factor", self.test_cfg['pad_multiple'])
+        pad_mode = self.test_cfg['pad_mode']
+
+        h, w = data.shape[-2:]  # NCHW
+
+        new_h = ds_factor * ((h - 1) // ds_factor + 1)
+        new_w = ds_factor * ((w - 1) // ds_factor + 1)
+
+        pad_h = new_h - h
+        pad_w = new_w - w
+        pad = (pad_h, pad_w)
+        if new_h != h or new_w != w:
+            pad_width = (0, pad_w, 0, pad_h)  # torch.pad in reverse order
+            data = F.pad(data, pad_width, pad_mode)
+
+        return data, pad
+
+    def restore_shape(self, pred_alpha, data_sample):
         """Restore the predicted alpha to the original shape.
 
         The shape of the predicted alpha may not be the same as the shape of
@@ -122,129 +189,60 @@ class BaseMattor(BaseModel):
         alpha.
 
         Args:
-            pred_alpha (np.ndarray): The predicted alpha.
+            pred_alpha (np.ndarray shape=(1,H,W)): a single predicted alpha.
             meta (list[dict]): Meta data about the current data batch.
                 Currently only batch_size 1 is supported.
 
         Returns:
             np.ndarray: The reshaped predicted alpha.
         """
-        ori_trimap = meta[0]['ori_trimap'].squeeze()
-        ori_h, ori_w = meta[0]['merged_ori_shape'][:2]
 
-        if 'interpolation' in meta[0]:
+        pred_alpha = pred_alpha.squeeze()
+        # print(pred_alpha.sum(), pred_alpha.max(), pred_alpha.min())
+        ori_trimap = data_sample.ori_trimap.squeeze()
+        ori_h, ori_w = data_sample.ori_merged_shape[:2]
+
+        assert pred_alpha.ndim == ori_trimap.ndim == 2
+        assert ori_trimap.shape == (ori_h, ori_w)
+
+        if hasattr(data_sample, 'interpolation'):
             # images have been resized for inference, resize back
+            raise NotImplementedError
             pred_alpha = mmcv.imresize(
                 pred_alpha, (ori_w, ori_h),
                 interpolation=meta[0]['interpolation'])
-        elif 'pad' in meta[0]:
+        elif hasattr(data_sample, 'pad_width'):
             # images have been padded for inference, remove the padding
+            # note; padding is applied only at the end
             pred_alpha = pred_alpha[:ori_h, :ori_w]
 
         assert pred_alpha.shape == (ori_h, ori_w)
-
+        # print(pred_alpha.sum())
         # some methods do not have an activation layer after the last conv,
         # clip to make sure pred_alpha range from 0 to 1.
         pred_alpha = np.clip(pred_alpha, 0, 1)
         pred_alpha[ori_trimap == 0] = 0.
         pred_alpha[ori_trimap == 255] = 1.
 
+        pred_alpha = np.round(pred_alpha * 255).astype(np.uint8)
+        # print(pred_alpha.sum())
         return pred_alpha
 
-    def evaluate(self, pred_alpha, meta):
-        """Evaluate predicted alpha matte.
-
-        The evaluation metrics are determined by ``self.test_cfg.metrics``.
-
-        Args:
-            pred_alpha (np.ndarray): The predicted alpha matte of shape (H, W).
-            meta (list[dict]): Meta data about the current data batch.
-                Currently only batch_size 1 is supported. Required keys in the
-                meta dict are ``ori_alpha`` and ``ori_trimap``.
-
-        Returns:
-            dict: The evaluation result.
-        """
-        if self.test_cfg.metrics is None:
-            return None
-
-        ori_alpha = meta[0]['ori_alpha'].squeeze()
-        ori_trimap = meta[0]['ori_trimap'].squeeze()
-
-        eval_result = dict()
-        for metric in self.test_cfg.metrics:
-            eval_result[metric] = self.allowed_metrics[metric](
-                ori_alpha, ori_trimap,
-                np.round(pred_alpha * 255).astype(np.uint8))
-        return eval_result
-
-    def save_image(self, pred_alpha, meta, save_path, iteration):
-        """Save predicted alpha to file.
-
-        Args:
-            pred_alpha (np.ndarray): The predicted alpha matte of shape (H, W).
-            meta (list[dict]): Meta data about the current data batch.
-                Currently only batch_size 1 is supported. Required keys in the
-                meta dict are ``merged_path``.
-            save_path (str): The directory to save predicted alpha matte.
-            iteration (int | None): If given as None, the saved alpha matte
-                will have the same file name with ``merged_path`` in meta dict.
-                If given as an int, the saved alpha matte would named with
-                postfix ``_{iteration}.png``.
-        """
-        image_stem = Path(meta[0]['merged_path']).stem
-        if iteration is None:
-            save_path = osp.join(save_path, f'{image_stem}.png')
-        else:
-            save_path = osp.join(save_path,
-                                 f'{image_stem}_{iteration + 1:06d}.png')
-        mmcv.imwrite(pred_alpha * 255, save_path)
-
     @abstractmethod
-    def forward_train(self, merged, trimap, alpha, **kwargs):
-        """Defines the computation performed at every training call.
+    def _forward(self, inputs: torch.Tensor, refine: bool) -> torch.Tensor:
+        """Forward from cat(image, trimap) to pred_alpha.
 
-        Args:
-            merged (Tensor): Image to predict alpha matte.
-            trimap (Tensor): Trimap of the input image.
-            alpha (Tensor): Ground-truth alpha matte.
+        This is the core forward function of the model,
+        it is used for both train and test.
+        Submodules should rewrite this function.
         """
-
-    @abstractmethod
-    def forward_test(self, merged, trimap, meta, **kwargs):
-        """Defines the computation performed at every test call.
-        """
-
-    def train_step(self, data_batch, optimizer):
-        """Defines the computation and network update at every training call.
-
-        Args:
-            data_batch (torch.Tensor): Batch of data as input.
-            optimizer (torch.optim.Optimizer): Optimizer of the model.
-
-        Returns:
-            dict: Output of ``train_step`` containing the logging variables \
-                of the current data batch.
-        """
-        outputs = self(**data_batch, test_mode=False)
-        loss, log_vars = self.parse_losses(outputs.pop('losses'))
-
-        # optimize
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-        outputs.update({'log_vars': log_vars})
-        return outputs
 
     def forward(self,
-                merged,
-                trimap,
-                meta,
-                alpha=None,
-                test_mode=False,
-                **kwargs):
-        """Defines the computation performed at every call.
+                inputs: torch.Tensor,
+                data_samples: List[EditDataSample],
+                return_loss=False) -> List[EditDataSample]:
+        """Forward function in test mode.
+
 
         Args:
             merged (Tensor): Image to predict alpha matte.
@@ -258,11 +256,49 @@ class BaseMattor(BaseModel):
                 call ``forward_train`` of the model. Defaults to False.
 
         Returns:
-            dict: Return the output of ``self.forward_test`` if ``test_mode`` \
-                are set to ``True``. Otherwise return the output of \
-                ``self.forward_train``.
+            List[EditDataElement]:
+                Sequence of predictions packed into EditDataElement
         """
-        if test_mode:
-            return self.forward_test(merged, trimap, meta, **kwargs)
+        assert len(inputs) == 1, (
+            "Currently only batch size=1 is supported, "
+            "because different image can be of different resolution")
 
-        return self.forward_train(merged, trimap, meta, alpha, **kwargs)
+        # print(inputs)
+        # print(inputs.min())
+        # print(inputs.max())
+        # print(inputs.sum())
+        pred_alpha, pred_refine = self._forward(inputs, self.test_cfg.refine)
+        if self.test_cfg.refine:
+            pred_alpha = pred_refine
+
+        pred_alpha = pred_alpha.detach().cpu().numpy()
+        assert pred_alpha.ndim == 4  # 1, 1, H, W, float32
+
+        predictions = []
+        for pa, ds in zip(pred_alpha, data_samples):
+            pa = self.restore_shape(pa, ds)
+            pa_sample = EditDataSample(pred_alpha=pa)
+            # No PixelData as it will shift 2-dim to 3-dim
+            predictions.append(pa_sample)
+
+        return predictions
+        # eval_result = self.evaluate(pred_alpha, meta)
+
+        #     if save_image:
+        #         self.save_image(pred_alpha, meta, save_path, iteration)
+
+        #     return {'pred_alpha': pred_alpha, 'eval_result': eval_result}
+
+    def forward_train(self,
+                      inputs: torch.Tensor,
+                      data_samples: List[EditDataSample],
+                      return_loss=False):
+        """_summary_
+
+        Args:
+            inputs (torch.Tensor): _description_
+            data_samples (List[InstanceData]): _description_
+            return_loss (bool, optional): _description_. Defaults to False.
+        """
+
+        # return self.forward_train(merged, trimap, meta, alpha, **kwargs)

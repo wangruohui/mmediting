@@ -1,10 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import os.path as osp
-from typing import List, Tuple
+from typing import List, Tuple, Optional
+from copy import deepcopy
 
 import mmcv
 import numpy as np
-from mmcv.fileio import FileClient
+from mmengine.fileio import FileClient
 from mmcv.transforms import BaseTransform
 
 from ..registry import TRANSFORMS
@@ -57,7 +58,7 @@ class LoadImageFromFile(BaseTransform):
         to_float32: bool = False,
         to_y_channel: bool = False,
         save_original_img: bool = False,
-        file_client_args: dict = dict(backend='disk')
+        file_client_args: Optional[dict] = None,
     ) -> None:
 
         self.key = key
@@ -66,8 +67,8 @@ class LoadImageFromFile(BaseTransform):
         self.imdecode_backend = imdecode_backend
         self.save_original_img = save_original_img
 
-        self.file_client_args = file_client_args.copy()
-        self.file_client = FileClient(**self.file_client_args)
+        self.file_client_args = deepcopy(file_client_args)
+        self.file_client = None
 
         # cache
         self.use_cache = use_cache
@@ -131,9 +132,12 @@ class LoadImageFromFile(BaseTransform):
         Returns:
             np.ndarray: Image.
         """
+        if self.file_client is None:
+            self.file_client = FileClient.infer_client(
+                uri=filename, file_client_args=self.file_client_args)
 
-        if self.file_client_args.get('backend', 'disk') == 'lmdb':
-            filename, _ = osp.splitext(osp.basename(filename))
+        # if self.file_client_args.get('backend', 'disk') == 'lmdb':
+        #     filename, _ = osp.splitext(osp.basename(filename))
 
         if filename in self.cache:
             img_bytes = self.cache[filename]

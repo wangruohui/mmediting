@@ -162,17 +162,17 @@ class EditDataSample(BaseDataElement):
     def gt_alpha(self):
         del self._gt_alpha
 
-    @property
-    def pred_alpha(self) -> PixelData:
-        return self._pred_alpha
+    # @property
+    # def pred_alpha(self) -> PixelData:
+    #     return self._pred_alpha
 
-    @pred_alpha.setter
-    def pred_alpha(self, value: PixelData):
-        self.set_field(value, '_pred_alpha', dtype=PixelData)
+    # @pred_alpha.setter
+    # def pred_alpha(self, value: PixelData):
+    #     self.set_field(value, '_pred_alpha', dtype=PixelData)
 
-    @pred_alpha.deleter
-    def pred_alpha(self):
-        del self._pred_alpha
+    # @pred_alpha.deleter
+    # def pred_alpha(self):
+    #     del self._pred_alpha
 
     @property
     def gt_fg(self) -> PixelData:

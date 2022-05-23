@@ -4,6 +4,7 @@ from mmcv.runner import auto_fp16
 
 from mmedit.registry import MODELS
 from ..builder import build_loss
+from mmedit.registry import MODELS
 from .base_mattor import BaseMattor
 from .utils import get_unknown_tensor
 
@@ -41,13 +42,15 @@ class DIM(BaseMattor):
     def __init__(self,
                  backbone,
                  refiner=None,
+                 preprocess_cfg=None,
                  train_cfg=None,
                  test_cfg=None,
                  pretrained=None,
                  loss_alpha=None,
                  loss_comp=None,
                  loss_refine=None):
-        super().__init__(backbone, refiner, train_cfg, test_cfg, pretrained)
+        super().__init__(backbone, refiner, preprocess_cfg, train_cfg,
+                         test_cfg, pretrained)
 
         if all(v is None for v in (loss_alpha, loss_comp, loss_refine)):
             raise ValueError('Please specify one loss for DIM.')
@@ -115,45 +118,45 @@ class DIM(BaseMattor):
                                                      weight)
         return {'losses': losses, 'num_samples': merged.size(0)}
 
-    def forward_test(self,
-                     merged,
-                     trimap,
-                     meta,
-                     save_image=False,
-                     save_path=None,
-                     iteration=None):
-        """Defines the computation performed at every test call.
+    # def forward_test(self,
+    #                  merged,
+    #                  trimap,
+    #                  meta,
+    #                  save_image=False,
+    #                  save_path=None,
+    #                  iteration=None):
+    #     """Defines the computation performed at every test call.
 
-        Args:
-            merged (Tensor): Image to predict alpha matte.
-            trimap (Tensor): Trimap of the input image.
-            meta (list[dict]): Meta data about the current data batch.
-                Currently only batch_size 1 is supported. It may contain
-                information needed to calculate metrics (``ori_alpha`` and
-                ``ori_trimap``) or save predicted alpha matte
-                (``merged_path``).
-            save_image (bool, optional): Whether save predicted alpha matte.
-                Defaults to False.
-            save_path (str, optional): The directory to save predicted alpha
-                matte. Defaults to None.
-            iteration (int, optional): If given as None, the saved alpha matte
-                will have the same file name with ``merged_path`` in meta dict.
-                If given as an int, the saved alpha matte would named with
-                postfix ``_{iteration}.png``. Defaults to None.
+    #     Args:
+    #         merged (Tensor): Image to predict alpha matte.
+    #         trimap (Tensor): Trimap of the input image.
+    #         meta (list[dict]): Meta data about the current data batch.
+    #             Currently only batch_size 1 is supported. It may contain
+    #             information needed to calculate metrics (``ori_alpha`` and
+    #             ``ori_trimap``) or save predicted alpha matte
+    #             (``merged_path``).
+    #         save_image (bool, optional): Whether save predicted alpha matte.
+    #             Defaults to False.
+    #         save_path (str, optional): The directory to save predicted alpha
+    #             matte. Defaults to None.
+    #         iteration (int, optional): If given as None, the saved alpha matte
+    #             will have the same file name with ``merged_path`` in meta dict.
+    #             If given as an int, the saved alpha matte would named with
+    #             postfix ``_{iteration}.png``. Defaults to None.
 
-        Returns:
-            dict: Contains the predicted alpha and evaluation result.
-        """
-        pred_alpha, pred_refine = self._forward(
-            torch.cat((merged, trimap), 1), self.test_cfg.refine)
-        if self.test_cfg.refine:
-            pred_alpha = pred_refine
+    #     Returns:
+    #         dict: Contains the predicted alpha and evaluation result.
+    #     """
+    #     pred_alpha, pred_refine = self._forward(
+    #         torch.cat((merged, trimap), 1), self.test_cfg.refine)
+    #     if self.test_cfg.refine:
+    #         pred_alpha = pred_refine
 
-        pred_alpha = pred_alpha.detach().cpu().numpy().squeeze()
-        pred_alpha = self.restore_shape(pred_alpha, meta)
-        eval_result = self.evaluate(pred_alpha, meta)
+    #     pred_alpha = pred_alpha.detach().cpu().numpy().squeeze()
+    #     pred_alpha = self.restore_shape(pred_alpha, meta)
+    #     eval_result = self.evaluate(pred_alpha, meta)
 
-        if save_image:
-            self.save_image(pred_alpha, meta, save_path, iteration)
+    #     if save_image:
+    #         self.save_image(pred_alpha, meta, save_path, iteration)
 
-        return {'pred_alpha': pred_alpha, 'eval_result': eval_result}
+    #     return {'pred_alpha': pred_alpha, 'eval_result': eval_result}

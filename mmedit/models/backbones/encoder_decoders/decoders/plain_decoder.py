@@ -7,7 +7,7 @@ from torch.autograd import Function
 from torch.nn.modules.pooling import _MaxUnpoolNd
 from torch.nn.modules.utils import _pair
 
-from mmedit.registry import COMPONENTS
+from mmedit.registry import MODELS
 
 
 class MaxUnpool2dop(Function):
@@ -129,7 +129,7 @@ class MaxUnpool2d(_MaxUnpoolNd):
                                    self.stride, self.padding, output_size)
 
 
-@COMPONENTS.register_module()
+@MODELS.register_module()
 class PlainDecoder(nn.Module):
     """Simple decoder from Deep Image Matting.
 

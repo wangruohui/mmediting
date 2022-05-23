@@ -109,6 +109,12 @@ class PackEditInputs(BaseTransform):
             img_tensor = images_to_tensor(img)
             packed_results['inputs'] = img_tensor
 
+        if 'merged' in results:
+            # image in matting annotation is named merged
+            img = results.pop('merged')
+            img_tensor = images_to_tensor(img)
+            packed_results['inputs'] = img_tensor
+
         if 'gt' in results:
             gt = results.pop('gt')
             gt_tensor = images_to_tensor(gt)

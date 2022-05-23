@@ -1,11 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch.nn as nn
 
-from mmedit.models.builder import build_component
-from mmedit.registry import BACKBONES
+# from mmedit.models.builder import build_component
+from ....registry import MODELS
 
 
-@BACKBONES.register_module()
+@MODELS.register_module()
 class SimpleEncoderDecoder(nn.Module):
     """Simple encoder-decoder model from matting.
 
@@ -17,10 +17,10 @@ class SimpleEncoderDecoder(nn.Module):
     def __init__(self, encoder, decoder):
         super().__init__()
 
-        self.encoder = build_component(encoder)
+        self.encoder = MODELS.build(encoder)
         if hasattr(self.encoder, 'out_channels'):
             decoder['in_channels'] = self.encoder.out_channels
-        self.decoder = build_component(decoder)
+        self.decoder = MODELS.build(decoder)
 
     def init_weights(self, pretrained=None):
         self.encoder.init_weights(pretrained)

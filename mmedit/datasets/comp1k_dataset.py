@@ -7,7 +7,7 @@ from mmengine.dataset import BaseDataset
 from mmengine.fileio import load
 from mmengine.utils import check_file_exist
 
-from .registry import DATASETS
+from ..registry import DATASETS
 
 
 @DATASETS.register_module()
@@ -84,7 +84,7 @@ class AdobeComp1kDataset(BaseDataset):
         """  # noqa: E501
         # `self.ann_file` denotes the absolute annotation file path if
         # `self.root=None` or relative path if `self.root=/path/to/data/`.
-        check_file_exist(self.ann_file)
+        # check_file_exist(self.ann_file)
         annotations = load(self.ann_file)
         if isinstance(annotations, list):
             # Old annotation format, we get data_list only
