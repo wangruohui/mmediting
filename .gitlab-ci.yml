@@ -2,7 +2,7 @@ variables:
   PYTORCH_IMAGE: registry.sensetime.com/openmmlab/pytorch18-cu102-mmcv-transforms:update-repo
 
 stages:
-  - linting
+  # - linting
   - test
   - deploy
 

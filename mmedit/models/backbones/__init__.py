@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .encoder_decoders import VGG16, SimpleEncoderDecoder, PlainDecoder
+from .encoder_decoders import VGG16, PlainDecoder, SimpleEncoderDecoder
+
 # from .encoder_decoders import (VGG16, ContextualAttentionNeck, DeepFillDecoder,
 #                                DeepFillEncoder, DeepFillEncoderDecoder,
 #                                DepthwiseIndexBlock, FBADecoder,

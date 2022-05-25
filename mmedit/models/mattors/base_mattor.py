@@ -1,25 +1,21 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import logging
-import os.path as osp
 from abc import ABCMeta, abstractmethod
-from pathlib import Path
-from typing import List, Tuple, Union, Dict
-from mmengine.utils import stack_batch
-from mmedit.data_element import PixelData
+from typing import List, Tuple
 
-from mmedit.data_element import EditDataSample
 import mmcv
 import numpy as np
 import torch
+import torch.nn.functional as F
 from mmcv import ConfigDict
 from mmcv.utils import print_log
-import torch
-import torch.nn.functional as F
+from mmengine import BaseModel
+
+from mmedit.data_element import EditDataSample, PixelData
 # from mmedit.core.evaluation import connectivity, gradient_error, mse, sad
 # from ..base import BaseModel
 # from ..builder import build_backbone, build_component
 from mmedit.registry import MODELS
-from mmengine import BaseModel
 
 
 class BaseMattor(BaseModel, metaclass=ABCMeta):
@@ -164,7 +160,7 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
         """Pad the images to align with network downsample factor for testing."""
 
         # ds_factor should be a property of a given model
-        ds_factor = getattr(self, "ds_factor", self.test_cfg['pad_multiple'])
+        ds_factor = getattr(self, 'ds_factor', self.test_cfg['pad_multiple'])
         pad_mode = self.test_cfg['pad_mode']
 
         h, w = data.shape[-2:]  # NCHW
@@ -260,8 +256,8 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
                 Sequence of predictions packed into EditDataElement
         """
         assert len(inputs) == 1, (
-            "Currently only batch size=1 is supported, "
-            "because different image can be of different resolution")
+            'Currently only batch size=1 is supported, '
+            'because different image can be of different resolution')
 
         # print(inputs)
         # print(inputs.min())

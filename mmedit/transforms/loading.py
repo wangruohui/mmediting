@@ -1,12 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import os.path as osp
-from typing import List, Tuple, Optional
 from copy import deepcopy
+from typing import List, Optional, Tuple
 
 import mmcv
 import numpy as np
-from mmengine.fileio import FileClient
 from mmcv.transforms import BaseTransform
+from mmengine.fileio import FileClient
 
 from ..registry import TRANSFORMS
 

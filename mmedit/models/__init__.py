@@ -10,7 +10,8 @@ from .backbones import *  # noqa: F401, F403
 # from .inpaintors import (AOTInpaintor, DeepFillv1Inpaintor, GLInpaintor,
 #  OneStageInpaintor, PConvInpaintor, TwoStageInpaintor)
 from .losses import *  # noqa: F401, F403
-from .mattors import DIM  ##, GCA, BaseMattor, IndexNet
+from .mattors import DIM  # #, GCA, BaseMattor, IndexNet
+
 # from .restorers import ESRGAN, SRGAN, BasicRestorer
 # from .synthesizers import CycleGAN, Pix2Pix
 # from .transformers import SearchTransformer
