@@ -108,7 +108,7 @@ test_pipeline = [
 #         filter_cfg=dict(filter_empty_gt=True, min_size=32),
 #         pipeline=train_pipeline))
 
-test_dataloader = dict(
+val_dataloader = dict(
     batch_size=1,
     num_workers=2,
     persistent_workers=False,
@@ -120,17 +120,17 @@ test_dataloader = dict(
         ann_file='test_list.json',
         test_mode=True,
         pipeline=test_pipeline))
-# test_dataloader = val_dataloader
+test_dataloader = val_dataloader
 
-test_evaluator = [
+val_evaluator = [
     dict(type='SAD'),
     dict(type='MSE'),
     dict(type='GradientError'),
     dict(type='ConnectivityError'),
 ]
-# test_evaluator = val_evaluator
+test_evaluator = val_evaluator
 
-# val_cfg = dict(interval=1)
+val_cfg = dict(interval=1)
 test_cfg = dict()
 
 # # optimizer

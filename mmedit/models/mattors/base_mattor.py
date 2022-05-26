@@ -216,12 +216,13 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
         # print(pred_alpha.sum())
         # some methods do not have an activation layer after the last conv,
         # clip to make sure pred_alpha range from 0 to 1.
-        pred_alpha = np.clip(pred_alpha, 0, 1)
-        pred_alpha[ori_trimap == 0] = 0.
-        pred_alpha[ori_trimap == 255] = 1.
+        # pred_alpha = np.clip(pred_alpha, 0, 1)
+        # pred_alpha[ori_trimap == 0] = 0
+        # pred_alpha[ori_trimap == 255] = 255
 
-        pred_alpha = np.round(pred_alpha * 255).astype(np.uint8)
-        # print(pred_alpha.sum())
+        # pred_alpha = np.round(pred_alpha * 255).astype(np.uint8)
+        # print(pred_alpha)
+        print(pred_alpha.dtype)
         return pred_alpha
 
     @abstractmethod
@@ -239,7 +240,6 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
                 return_loss=False) -> List[EditDataSample]:
         """Forward function in test mode.
 
-
         Args:
             merged (Tensor): Image to predict alpha matte.
             trimap (Tensor): Trimap of the input image.
@@ -255,28 +255,45 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
             List[EditDataElement]:
                 Sequence of predictions packed into EditDataElement
         """
-        assert len(inputs) == 1, (
-            'Currently only batch size=1 is supported, '
-            'because different image can be of different resolution')
+        # assert len(inputs) == 1, (
+        #     'Currently only batch size=1 is supported, '
+        #     'because different image can be of different resolution')
 
-        # print(inputs)
-        # print(inputs.min())
-        # print(inputs.max())
-        # print(inputs.sum())
+        # import time, torch
+        # start = time.time()
+        # torch.cuda.synchronize()
         pred_alpha, pred_refine = self._forward(inputs, self.test_cfg.refine)
         if self.test_cfg.refine:
             pred_alpha = pred_refine
+        # torch.cuda.synchronize()
+        # middle = time.time()
+        assert pred_alpha.ndim == 4  # N, 1, H, W, float32
+        pred_alpha = pred_alpha[:, 0, :, :]
 
-        pred_alpha = pred_alpha.detach().cpu().numpy()
-        assert pred_alpha.ndim == 4  # 1, 1, H, W, float32
+        # pred_alpha = pred_alpha.detach()
+
+        trimap = inputs[:, -1, :, :]
+
+        pred_alpha.clamp_(min=0, max=1)
+        pred_alpha[trimap == 1] = 1
+        pred_alpha[trimap == 0] = 0
+        pred_alpha *= 255
+        pred_alpha.round_()
+        pred_alpha = pred_alpha.to(dtype=torch.uint8)
 
         predictions = []
         for pa, ds in zip(pred_alpha, data_samples):
-            pa = self.restore_shape(pa, ds)
-            pa_sample = EditDataSample(pred_alpha=pa)
+            # pa = self.restore_shape(pa, ds)
+            ori_h, ori_w = ds.ori_merged_shape[:2]
+            pa = pa[:ori_h, :ori_w]
+            # pa = pa.cpu().numpy()
+            pa_sample = EditDataSample(pred_alpha=PixelData(data=pa))
             # No PixelData as it will shift 2-dim to 3-dim
             predictions.append(pa_sample)
+        # end = time.time()
+        # torch.cuda.synchronize()
 
+        # print("time: ", end - middle, middle - start)
         return predictions
         # eval_result = self.evaluate(pred_alpha, meta)
 
