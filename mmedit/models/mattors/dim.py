@@ -3,7 +3,6 @@ import torch
 from mmcv.runner import auto_fp16
 
 from mmedit.registry import MODELS
-from ..builder import build_loss
 from .base_mattor import BaseMattor
 from .utils import get_unknown_tensor
 
@@ -55,11 +54,11 @@ class DIM(BaseMattor):
             raise ValueError('Please specify one loss for DIM.')
 
         if loss_alpha is not None:
-            self.loss_alpha = build_loss(loss_alpha)
+            self.loss_alpha = MODELS.build(loss_alpha)
         if loss_comp is not None:
-            self.loss_comp = build_loss(loss_comp)
+            self.loss_comp = MODELS.build(loss_comp)
         if loss_refine is not None:
-            self.loss_refine = build_loss(loss_refine)
+            self.loss_refine = MODELS.build(loss_refine)
 
         # support fp16
         self.fp16_enabled = False

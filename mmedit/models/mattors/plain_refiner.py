@@ -3,10 +3,10 @@ import torch
 import torch.nn as nn
 from mmcv.cnn.utils.weight_init import xavier_init
 
-from mmedit.registry import COMPONENTS
+from mmedit.registry import MODELS
 
 
-@COMPONENTS.register_module()
+@MODELS.register_module()
 class PlainRefiner(nn.Module):
     """Simple refiner from Deep Image Matting.
 
