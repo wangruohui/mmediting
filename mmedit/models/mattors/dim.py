@@ -77,6 +77,13 @@ class DIM(BaseMattor):
             pred_refine = torch.zeros([])
         return pred_alpha, pred_refine
 
+    def _forward_test(self, x):
+        pred_alpha, pred_refine = self._forward(x, self.test_cfg.refine)
+        if self.test_cfg.refine:
+            return pred_refine
+        else:
+            return pred_alpha
+
     def forward_dummy(self, inputs):
         return self._forward(inputs, self.with_refiner)
 

@@ -40,13 +40,6 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
         pretrained (str): Path of pretrained model.
     """
 
-    # allowed_metrics = {
-    #     'SAD': sad,
-    #     'MSE': mse,
-    #     'GRAD': gradient_error,
-    #     'CONN': connectivity
-    # }
-
     def __init__(self,
                  backbone,
                  refiner=None,
@@ -125,11 +118,12 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
 
         batch_inputs, batch_data_samples = super().preprocess(data, training)
 
+        # Collect all trimap as a batch
         batch_trimap = []
         for ds in batch_data_samples:
             batch_trimap.append(ds.trimap.data)
             del ds.trimap
-        batch_trimap = torch.stack(batch_trimap)
+        batch_trimap = torch.stack(batch_trimap) / 255
 
         assert batch_inputs.ndim == batch_trimap.ndim == 4
         assert batch_inputs.shape[-2:] == batch_trimap.shape[-2:], f"""
@@ -137,30 +131,42 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
             but got {batch_inputs.shape[-2:]} vs {batch_trimap.shape[-2:]}
             """
 
+        # Stack image and trimap along channel dimension
         # Currently, all model do this concat at the start of forwarding
         # and data_sample is a very complex data structure
         # so this is a simple work-around to make codes simpler
-        batch_concat = torch.cat((batch_inputs, batch_trimap / 255.), dim=1)
+        print(f"batch_trimap.dtype = {batch_trimap.dtype}")
 
         if not training:
             # Pad the images to align with network downsample factor for testing
-            batch_concat, pad_width = self.pad(batch_concat)
+            if 'pad_multiple' in self.test_cfg:
+                ds_factor = self.test_cfg['pad_multiple']
+                batch_inputs, pad_width = self._pad(batch_inputs, ds_factor)
+                batch_trimap, pad_width = self._pad(batch_trimap, ds_factor)
+                # for ds in batch_data_samples:
+                #     ds.set_field(
+                #         name='pad_width',
+                #         value=pad_width,
+                #         field_type='metainfo')
+            elif 'resize_to_multiple' in self.test_cfg:
+                ds_factor = self.test_cfg['resize_to_multiple']
+                batch_inputs, batch_trimap = self._interpolate(
+                    batch_inputs, batch_trimap, ds_factor)
+            else:
+                raise NotImplementedError
 
-            for ds in batch_data_samples:
-                ds.set_field(
-                    name='pad_width', value=pad_width, field_type='metainfo')
-        #         print(ds)
-
+        batch_concat = torch.cat((batch_inputs, batch_trimap), dim=1)
         # print(batch_concat.shape)
         # print(batch_concat)
 
+        print(f"batch_concat.size() = {batch_concat.size()}")
         return batch_concat, batch_data_samples
 
-    def pad(self, data):
+    def _pad(self, data, ds_factor):
         """Pad the images to align with network downsample factor for testing."""
 
         # ds_factor should be a property of a given model
-        ds_factor = getattr(self, 'ds_factor', self.test_cfg['pad_multiple'])
+        # ds_factor = getattr(self, 'ds_factor', self.test_cfg['pad_multiple'])
         pad_mode = self.test_cfg['pad_mode']
 
         h, w = data.shape[-2:]  # NCHW
@@ -177,7 +183,34 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
 
         return data, pad
 
-    def restore_shape(self, pred_alpha, data_sample):
+    def _interpolate(self, batch_image, batch_trimap, ds_factor):
+        """Interpolate images and trimaps to align the downsample factor."""
+
+        # ds_factor should be a property of a given model
+        interp_mode = self.test_cfg['interp_mode']
+
+        assert batch_image.shape[-2:] == batch_trimap.shape[-2:]
+
+        h, w = batch_image.shape[-2:]  # NCHW
+
+        new_h = h - (h % ds_factor)
+        new_w = w - (w % ds_factor)
+
+        size = (new_h, new_w)
+        if new_h != h or new_w != w:
+            batch_image = F.interpolate(
+                batch_image, size=size, mode=interp_mode)
+            batch_trimap = F.interpolate(
+                batch_trimap, size=size, mode='nearest')
+            print(size, h, w)
+            # batch_image = F.interpolate(
+            #     batch_image, size_factor=ds_factor, mode=interp_mode)
+            # batch_trimap = F.interpolate(
+            #     batch_trimap, size_factor=ds_factor, mode=interp_mode)
+
+        return batch_image, batch_trimap
+
+    def restore_shape_dep(self, pred_alpha, data_sample):
         """Restore the predicted alpha to the original shape.
 
         The shape of the predicted alpha may not be the same as the shape of
@@ -225,14 +258,74 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
         print(pred_alpha.dtype)
         return pred_alpha
 
-    @abstractmethod
-    def _forward(self, inputs: torch.Tensor, refine: bool) -> torch.Tensor:
-        """Forward from cat(image, trimap) to pred_alpha.
+    def postprocess(
+        self,
+        inputs: torch.Tensor,  # N, 4, H, W, float32
+        pred_alpha: torch.Tensor,  # N, 1, H, W, float32
+        data_samples: List[EditDataSample],
+    ) -> List[EditDataSample]:
+        """Post-processing for alpha predictions.
 
-        This is the core forward function of the model,
-        it is used for both train and test.
-        Submodules should rewrite this function.
+        1. Restore padded shape
+        1. Mask with trimap
+        1. clamp to 0-1
+        1. to uint8
         """
+
+        assert pred_alpha.ndim == 4  # N, 1, H, W, float32
+        # pred_alpha = pred_alpha[:, 0, :, :]
+
+        # trimap = inputs[:, -1, :, :]
+
+        # pred_alpha.clamp_(min=0, max=1)
+        # pred_alpha[trimap == 1] = 1
+        # pred_alpha[trimap == 0] = 0
+        # pred_alpha *= 255
+        # pred_alpha.round_()
+        # pred_alpha = pred_alpha.to(dtype=torch.uint8)
+
+        predictions = []
+        for pa, ds in zip(pred_alpha, data_samples):
+            # pa = self.restore_shape(pa, ds)
+            ori_h, ori_w = ds.ori_merged_shape[:2]
+            print(ds.ori_merged_shape)
+            if 'pad_multiple' in self.test_cfg:
+                pa = pa[:, :ori_h, :ori_w]
+            elif 'resize_to_multiple' in self.test_cfg:
+                print(pa.shape)
+                pa = F.interpolate(
+                    pa.unsqueeze(0),
+                    size=(ori_h, ori_w),
+                    mode=self.test_cfg['interp_mode'])[0]
+                print(pa.shape)
+
+            pa = pa[0]
+            ori_trimap = ds.ori_trimap
+            pa.clamp_(min=0, max=1)
+            pa[ori_trimap == 255] = 1
+            pa[ori_trimap == 0] = 0
+            pa *= 255
+            pa.round_()
+            pa = pa.to(dtype=torch.uint8)
+            # pa = pa.cpu().numpy()
+            pa_sample = EditDataSample(pred_alpha=PixelData(data=pa))
+            # No PixelData as it will shift 2-dim to 3-dim
+            predictions.append(pa_sample)
+        # end = time.time()
+        # torch.cuda.synchronize()
+
+        # print("time: ", end - middle, middle - start)
+        return predictions
+        # eval_result = self.evaluate(pred_alpha, meta)
+
+        #     if save_image:
+        #         self.save_image(pred_alpha, meta, save_path, iteration)
+
+        #     return {'pred_alpha': pred_alpha, 'eval_result': eval_result}
+
+    @abstractmethod
+    def _forward_test(self, inputs: torch.Tensor) -> torch.Tensor:
+        """Forward from inputs to pred_alpha in test mode."""
 
     def forward(self,
                 inputs: torch.Tensor,
@@ -262,56 +355,8 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
         # import time, torch
         # start = time.time()
         # torch.cuda.synchronize()
-        pred_alpha, pred_refine = self._forward(inputs, self.test_cfg.refine)
-        if self.test_cfg.refine:
-            pred_alpha = pred_refine
+        pred_alpha = self._forward_test(inputs)
+        predictions = self.postprocess(inputs, pred_alpha, data_samples)
         # torch.cuda.synchronize()
         # middle = time.time()
-        assert pred_alpha.ndim == 4  # N, 1, H, W, float32
-        pred_alpha = pred_alpha[:, 0, :, :]
-
-        # pred_alpha = pred_alpha.detach()
-
-        trimap = inputs[:, -1, :, :]
-
-        pred_alpha.clamp_(min=0, max=1)
-        pred_alpha[trimap == 1] = 1
-        pred_alpha[trimap == 0] = 0
-        pred_alpha *= 255
-        pred_alpha.round_()
-        pred_alpha = pred_alpha.to(dtype=torch.uint8)
-
-        predictions = []
-        for pa, ds in zip(pred_alpha, data_samples):
-            # pa = self.restore_shape(pa, ds)
-            ori_h, ori_w = ds.ori_merged_shape[:2]
-            pa = pa[:ori_h, :ori_w]
-            # pa = pa.cpu().numpy()
-            pa_sample = EditDataSample(pred_alpha=PixelData(data=pa))
-            # No PixelData as it will shift 2-dim to 3-dim
-            predictions.append(pa_sample)
-        # end = time.time()
-        # torch.cuda.synchronize()
-
-        # print("time: ", end - middle, middle - start)
         return predictions
-        # eval_result = self.evaluate(pred_alpha, meta)
-
-        #     if save_image:
-        #         self.save_image(pred_alpha, meta, save_path, iteration)
-
-        #     return {'pred_alpha': pred_alpha, 'eval_result': eval_result}
-
-    def forward_train(self,
-                      inputs: torch.Tensor,
-                      data_samples: List[EditDataSample],
-                      return_loss=False):
-        """_summary_
-
-        Args:
-            inputs (torch.Tensor): _description_
-            data_samples (List[InstanceData]): _description_
-            return_loss (bool, optional): _description_. Defaults to False.
-        """
-
-        # return self.forward_train(merged, trimap, meta, alpha, **kwargs)
