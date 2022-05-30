@@ -123,9 +123,28 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
         for ds in batch_data_samples:
             batch_trimap.append(ds.trimap.data)
             del ds.trimap
-        batch_trimap = torch.stack(batch_trimap) / 255
+        batch_trimap = torch.stack(batch_trimap)
+
+        proc_trimap = self.preprocess_cfg.get('trimap', 'norm')
+        if proc_trimap == 'norm':
+            batch_trimap = batch_trimap / 255.0  # uint8->float32
+        elif proc_trimap == 'label':
+            batch_trimap[batch_trimap == 128] = 1
+            batch_trimap[batch_trimap == 255] = 2
+            batch_trimap = batch_trimap.to(torch.float32)
+        elif proc_trimap == 'onehot':
+            batch_trimap[batch_trimap == 128] = 1
+            batch_trimap[batch_trimap == 255] = 2
+            batch_trimap = F.one_hot(
+                batch_trimap.to(torch.long), num_classes=3)
+            # N 1 H W C -> N C H W
+            batch_trimap = batch_trimap[:, 0, :, :, :]
+            batch_trimap = batch_trimap.permute(0, 3, 1, 2)
+            batch_trimap = batch_trimap.to(torch.float32)
 
         assert batch_inputs.ndim == batch_trimap.ndim == 4
+        # print(batch_inputs.shape)
+        # print(batch_trimap.shape)
         assert batch_inputs.shape[-2:] == batch_trimap.shape[-2:], f"""
             Expect batch_merged.shape[-2:] == batch_trimap.shape[-2:],
             but got {batch_inputs.shape[-2:]} vs {batch_trimap.shape[-2:]}
@@ -135,7 +154,7 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
         # Currently, all model do this concat at the start of forwarding
         # and data_sample is a very complex data structure
         # so this is a simple work-around to make codes simpler
-        print(f"batch_trimap.dtype = {batch_trimap.dtype}")
+        # print(f"batch_trimap.dtype = {batch_trimap.dtype}")
 
         if not training:
             # Pad the images to align with network downsample factor for testing
@@ -159,7 +178,7 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
         # print(batch_concat.shape)
         # print(batch_concat)
 
-        print(f"batch_concat.size() = {batch_concat.size()}")
+        # print(f"batch_concat.size() = {batch_concat.size()}")
         return batch_concat, batch_data_samples
 
     def _pad(self, data, ds_factor):
@@ -202,7 +221,7 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
                 batch_image, size=size, mode=interp_mode)
             batch_trimap = F.interpolate(
                 batch_trimap, size=size, mode='nearest')
-            print(size, h, w)
+            # print(size, h, w)
             # batch_image = F.interpolate(
             #     batch_image, size_factor=ds_factor, mode=interp_mode)
             # batch_trimap = F.interpolate(
@@ -255,7 +274,7 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
 
         # pred_alpha = np.round(pred_alpha * 255).astype(np.uint8)
         # print(pred_alpha)
-        print(pred_alpha.dtype)
+        # print(pred_alpha.dtype)
         return pred_alpha
 
     def postprocess(
@@ -288,22 +307,26 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
         for pa, ds in zip(pred_alpha, data_samples):
             # pa = self.restore_shape(pa, ds)
             ori_h, ori_w = ds.ori_merged_shape[:2]
-            print(ds.ori_merged_shape)
+            # print(ds.ori_merged_shape)
             if 'pad_multiple' in self.test_cfg:
                 pa = pa[:, :ori_h, :ori_w]
             elif 'resize_to_multiple' in self.test_cfg:
-                print(pa.shape)
+                # print(pa.shape)
                 pa = F.interpolate(
                     pa.unsqueeze(0),
                     size=(ori_h, ori_w),
                     mode=self.test_cfg['interp_mode'])[0]
-                print(pa.shape)
+                # print(pa.shape)
 
             pa = pa[0]
-            ori_trimap = ds.ori_trimap
             pa.clamp_(min=0, max=1)
+            ori_trimap = ds.ori_trimap
+            # trimap = torch.from_numpy(ds.ori_trimap).to(pa.device)
             pa[ori_trimap == 255] = 1
             pa[ori_trimap == 0] = 0
+
+            # pa = (trimap == 255) + (trimap == 128) * pa
+
             pa *= 255
             pa.round_()
             pa = pa.to(dtype=torch.uint8)

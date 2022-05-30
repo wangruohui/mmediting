@@ -3,6 +3,7 @@
 import cv2
 import numpy as np
 import pytest
+import torch
 
 from mmedit.transforms.matting import (FormatTrimap, GenerateTrimap,
                                        GenerateTrimapWithDistTransform,
