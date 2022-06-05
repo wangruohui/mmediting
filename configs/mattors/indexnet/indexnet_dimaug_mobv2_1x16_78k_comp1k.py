@@ -3,6 +3,15 @@ _base_ = ['../default_runtime.py']
 # model settings
 model = dict(
     type='IndexNet',
+    data_preprocessor=dict(
+        type='ImageAndTrimapPreprocessor',
+        mean=[123.675, 116.28, 103.53],
+        std=[58.395, 57.12, 57.375],
+        proc_trimap='rescale_to_zero_one',
+        size_divisor=32,
+        resize_method='pad',
+        resize_mode='reflect',
+    ),
     backbone=dict(
         type='SimpleEncoderDecoder',
         encoder=dict(type='IndexNetEncoder', in_channels=4, freeze_bn=True),
@@ -10,13 +19,7 @@ model = dict(
     loss_alpha=dict(type='CharbonnierLoss', loss_weight=0.5, sample_wise=True),
     loss_comp=dict(
         type='CharbonnierCompLoss', loss_weight=1.5, sample_wise=True),
-    pretrained='open-mmlab://mmedit/mobilenet_v2',
-    preprocess_cfg=dict(
-        pixel_mean=[123.675, 116.28, 103.53],
-        pixel_std=[58.395, 57.12, 57.375],
-        to_rgb=True),
-    train_cfg=dict(train_backbone=True),
-    test_cfg=dict(pad_multiple=32, pad_mode='reflect'))
+    pretrained='open-mmlab://mmedit/mobilenet_v2')
 
 # dataset settings
 dataset_type = 'AdobeComp1kDataset'

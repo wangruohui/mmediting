@@ -109,12 +109,6 @@ class PackEditInputs(BaseTransform):
             img_tensor = images_to_tensor(img)
             packed_results['inputs'] = img_tensor
 
-        if 'merged' in results:
-            # image in matting annotation is named merged
-            img = results.pop('merged')
-            img_tensor = images_to_tensor(img)
-            packed_results['inputs'] = img_tensor
-
         if 'gt' in results:
             gt = results.pop('gt')
             gt_tensor = images_to_tensor(gt)
@@ -148,6 +142,13 @@ class PackEditInputs(BaseTransform):
             trimap = results.pop('trimap')
             trimap_tensor = images_to_tensor(trimap)
             data_sample.trimap = PixelData(data=trimap_tensor)
+
+        if 'merged' in results:
+            # image in matting annotation is named merged
+            img = results.pop('merged')
+            img_tensor = images_to_tensor(img)
+            packed_results['inputs'] = img_tensor
+            data_sample.gt_merged = PixelData(data=img_tensor.clone())
 
         if 'alpha' in results:
             # gt_alpha in matting annotation is named alpha
@@ -233,3 +234,83 @@ class ToTensor(BaseTransform):
 
         return self.__class__.__name__ + (
             f'(keys={self.keys}, to_float32={self.to_float32})')
+
+
+# @TRANSFORMS.register_module()
+# class PackMattingInputs(BaseTransform):
+#     """Pack the inputs data for image matting.
+
+#     Keys for images include ``img``, ``gt``, ``ref``, ``mask``, ``gt_heatmap``,
+#         ``trimap``, ``gt_alpha``, ``gt_fg``, ``gt_bg``. All of them will be
+#         packed into data field of EditDataSample.
+
+#     Others will be packed into metainfo field of EditDataSample.
+#     """
+
+#     def __init__(self, keys: List[str]) -> None:
+#         super().__init__()
+#         self.keys = keys
+
+#     def transform(self, results: dict) -> dict:
+#         """Method to pack the input data.
+
+#         Args:
+#             results (dict): Result dict from the data pipeline.
+
+#         Returns:
+#             dict:
+
+#             - 'inputs' (obj:`torch.Tensor`): The forward data of models.
+#             - 'data_sample' (obj:`EditDataSample`): The annotation info of the
+#                 sample.
+#         """
+
+#         packed_results = dict()
+#         data_sample = EditDataSample()
+
+#         img = results.pop('merged')
+#         img_tensor = images_to_tensor(img)
+#         packed_results['inputs'] = img_tensor
+
+#         for key in self.keys:
+#             if key.startswith('ori'):
+
+#             if key in results:
+#             # image in matting annotation is named merged
+
+#         if 'alpha' in results:
+#             # gt_alpha in matting annotation is named alpha
+#             gt_alpha = results.pop('alpha')
+#             gt_alpha_tensor = images_to_tensor(gt_alpha)
+#             data_sample.gt_alpha = PixelData(data=gt_alpha_tensor)
+
+#         if 'gt_alpha' in results:
+#             gt_alpha = results.pop('gt_alpha')
+#             gt_alpha_tensor = images_to_tensor(gt_alpha)
+#             data_sample.gt_alpha = PixelData(data=gt_alpha_tensor)
+
+#         if 'gt_fg' in results:
+#             gt_fg = results.pop('gt_fg')
+#             gt_fg_tensor = images_to_tensor(gt_fg)
+#             data_sample.gt_fg = PixelData(data=gt_fg_tensor)
+
+#         if 'gt_bg' in results:
+#             gt_bg = results.pop('gt_bg')
+#             gt_bg_tensor = images_to_tensor(gt_bg)
+#             data_sample.gt_bg = PixelData(data=gt_bg_tensor)
+
+#         metainfo = dict()
+#         for key in results:
+#             metainfo[key] = results[key]
+
+#         data_sample.set_metainfo(metainfo=metainfo)
+
+#         packed_results['data_sample'] = data_sample
+
+#         return packed_results
+
+#     def __repr__(self) -> str:
+
+#         repr_str = self.__class__.__name__
+
+#         return repr_str

@@ -2,6 +2,7 @@
 import argparse
 import os
 import os.path as osp
+from mmengine.logging import MMLogger
 
 from mmengine.config import Config, DictAction
 from mmengine.logging import MMLogger

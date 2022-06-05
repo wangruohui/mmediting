@@ -1,10 +1,13 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from typing import Tuple
 import torch
-from mmcv.runner import auto_fp16
 
 from mmedit.registry import MODELS
 from .base_mattor import BaseMattor
 from .utils import get_unknown_tensor
+from mmedit.data_element import EditDataSample, PixelData
+
+from mmengine.logging import MMLogger
 
 
 @MODELS.register_module()
@@ -38,20 +41,44 @@ class DIM(BaseMattor):
     """
 
     def __init__(self,
+                 data_preprocessor,
                  backbone,
                  refiner=None,
-                 preprocess_cfg=None,
                  train_cfg=None,
                  test_cfg=None,
                  pretrained=None,
                  loss_alpha=None,
                  loss_comp=None,
                  loss_refine=None):
-        super().__init__(backbone, refiner, preprocess_cfg, train_cfg,
-                         test_cfg, pretrained)
+        # Build data _preprocessor and backbone
+        super().__init__(
+            backbone=backbone,
+            data_preprocessor=data_preprocessor,
+            pretrained=pretrained,
+            train_cfg=train_cfg,
+            test_cfg=test_cfg)
+
+        # build refiner if it's not None.
+        if refiner is None:
+            self.train_cfg['train_refiner'] = False
+            self.test_cfg['refine'] = False
+        else:
+            self.refiner = MODELS.build(refiner)
+
+        # if argument train_cfg is not None, validate if the config is proper.
+        assert hasattr(self.train_cfg, 'train_refiner')
+        assert hasattr(self.test_cfg, 'refine')
+        if self.test_cfg.refine and not self.train_cfg.train_refiner:
+            logger = MMLogger.create_instance('mmedit')
+            logger.warning(
+                'You are not training the refiner, but it is used for '
+                'model forwarding.')
+
+        if not self.train_cfg.train_backbone:
+            self.freeze_backbone()
 
         if all(v is None for v in (loss_alpha, loss_comp, loss_refine)):
-            raise ValueError('Please specify one loss for DIM.')
+            raise ValueError('Please specify at least one loss for DIM.')
 
         if loss_alpha is not None:
             self.loss_alpha = MODELS.build(loss_alpha)
@@ -60,11 +87,35 @@ class DIM(BaseMattor):
         if loss_refine is not None:
             self.loss_refine = MODELS.build(loss_refine)
 
-        # support fp16
-        self.fp16_enabled = False
+        self.init_weights()
 
-    @auto_fp16()
-    def _forward(self, x, refine):
+    @property
+    def with_refiner(self):
+        """Whether the matting model has a refiner.
+        """
+        return hasattr(self, 'refiner') and self.refiner is not None
+
+    def freeze_backbone(self):
+        """Freeze the backbone and only train the refiner.
+        """
+        self.backbone.eval()
+        for param in self.backbone.parameters():
+            param.requires_grad = False
+
+    def _forward(self, x: torch.Tensor,
+                 refine: bool) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Raw forward function.
+
+        Args:
+            x (torch.Tensor): Concatenation of merged image and trimap
+                with shape (N, 4, H, W)
+            refine (bool): if forward through refiner
+
+        Returns:
+            torch.Tensor: pred_alpha, with shape (N, 1, H, W)
+            torch.Tensor: pred_refine, with shape (N, 4, H, W)
+        """
+
         raw_alpha = self.backbone(x)
         pred_alpha = raw_alpha.sigmoid()
 
@@ -78,90 +129,52 @@ class DIM(BaseMattor):
         return pred_alpha, pred_refine
 
     def _forward_test(self, x):
+        """Forward to get alpha prediction."""
         pred_alpha, pred_refine = self._forward(x, self.test_cfg.refine)
         if self.test_cfg.refine:
             return pred_refine
         else:
             return pred_alpha
 
-    def forward_dummy(self, inputs):
-        return self._forward(inputs, self.with_refiner)
-
-    def forward_train(self, merged, trimap, meta, alpha, ori_merged, fg, bg):
+    def _forward_train(self, inputs, data_samples):
         """Defines the computation performed at every training call.
 
         Args:
-            merged (Tensor): of shape (N, C, H, W) encoding input images.
-                Typically these should be mean centered and std scaled.
-            trimap (Tensor): of shape (N, 1, H, W). Tensor of trimap read by
-                opencv.
-            meta (list[dict]): Meta data about the current data batch.
-            alpha (Tensor): of shape (N, 1, H, W). Tensor of alpha read by
-                opencv.
-            ori_merged (Tensor): of shape (N, C, H, W). Tensor of origin merged
-                image read by opencv (not normalized).
-            fg (Tensor): of shape (N, C, H, W). Tensor of fg read by opencv.
-            bg (Tensor): of shape (N, C, H, W). Tensor of bg read by opencv.
+            inputs (torch.Tensor): Concatenation of normalized image and trimap
+                shape (N, 4, H, W)
+            data_samples (list[EditDataSample]): Data samples containing:
+                - alpha (Tensor): of shape (N, 1, H, W). Tensor of alpha read by
+                    opencv.
+                - ori_merged (Tensor): of shape (N, C, H, W). Tensor of origin merged
+                    image read by opencv (not normalized).
+                - fg (Tensor): of shape (N, C, H, W). Tensor of fg read by opencv.
+                - bg (Tensor): of shape (N, C, H, W). Tensor of bg read by opencv.
 
         Returns:
             dict: Contains the loss items and batch information.
         """
-        pred_alpha, pred_refine = self._forward(
-            torch.cat((merged, trimap), 1), self.train_cfg.train_refiner)
+        trimap = inputs[:, 3:, :, :]
+        gt_alpha = torch.stack(tuple(ds.gt_alpha.data for ds in data_samples))
+        gt_fg = torch.stack(tuple(ds.gt_fg.data for ds in data_samples))
+        gt_bg = torch.stack(tuple(ds.gt_bg.data for ds in data_samples))
+        gt_merged = torch.stack(
+            tuple(ds.gt_merged.data for ds in data_samples))
 
-        weight = get_unknown_tensor(trimap, meta)
+        # merged, trimap, meta, alpha, ori_merged, fg, bg
+        pred_alpha, pred_refine = self._forward(inputs,
+                                                self.train_cfg.train_refiner)
+
+        weight = get_unknown_tensor(trimap, unknown_value=128 / 255)
         losses = dict()
         if self.train_cfg.train_backbone:
             if self.loss_alpha is not None:
-                losses['loss_alpha'] = self.loss_alpha(pred_alpha, alpha,
+                losses['loss_alpha'] = self.loss_alpha(pred_alpha, gt_alpha,
                                                        weight)
             if self.loss_comp is not None:
-                losses['loss_comp'] = self.loss_comp(pred_alpha, fg, bg,
-                                                     ori_merged, weight)
+                losses['loss_comp'] = self.loss_comp(pred_alpha, gt_fg, gt_bg,
+                                                     gt_merged, weight)
         if self.train_cfg.train_refiner:
-            losses['loss_refine'] = self.loss_refine(pred_refine, alpha,
+            losses['loss_refine'] = self.loss_refine(pred_refine, gt_alpha,
                                                      weight)
-        return {'losses': losses, 'num_samples': merged.size(0)}
-
-    # def forward_test(self,
-    #                  merged,
-    #                  trimap,
-    #                  meta,
-    #                  save_image=False,
-    #                  save_path=None,
-    #                  iteration=None):
-    #     """Defines the computation performed at every test call.
-
-    #     Args:
-    #         merged (Tensor): Image to predict alpha matte.
-    #         trimap (Tensor): Trimap of the input image.
-    #         meta (list[dict]): Meta data about the current data batch.
-    #             Currently only batch_size 1 is supported. It may contain
-    #             information needed to calculate metrics (``ori_alpha`` and
-    #             ``ori_trimap``) or save predicted alpha matte
-    #             (``merged_path``).
-    #         save_image (bool, optional): Whether save predicted alpha matte.
-    #             Defaults to False.
-    #         save_path (str, optional): The directory to save predicted alpha
-    #             matte. Defaults to None.
-    #         iteration (int, optional): If given as None, the saved alpha matte
-    #             will have the same file name with ``merged_path`` in meta dict.
-    #             If given as an int, the saved alpha matte would named with
-    #             postfix ``_{iteration}.png``. Defaults to None.
-
-    #     Returns:
-    #         dict: Contains the predicted alpha and evaluation result.
-    #     """
-    #     pred_alpha, pred_refine = self._forward(
-    #         torch.cat((merged, trimap), 1), self.test_cfg.refine)
-    #     if self.test_cfg.refine:
-    #         pred_alpha = pred_refine
-
-    #     pred_alpha = pred_alpha.detach().cpu().numpy().squeeze()
-    #     pred_alpha = self.restore_shape(pred_alpha, meta)
-    #     eval_result = self.evaluate(pred_alpha, meta)
-
-    #     if save_image:
-    #         self.save_image(pred_alpha, meta, save_path, iteration)
-
-    #     return {'pred_alpha': pred_alpha, 'eval_result': eval_result}
+        return losses
+        return {'losses': losses, 'num_samples': inputs.size(0)}

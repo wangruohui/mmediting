@@ -3,6 +3,15 @@ _base_ = ['../default_runtime.py']
 # model settings
 model = dict(
     type='GCA',
+    data_preprocessor=dict(
+        type='ImageAndTrimapPreprocessor',
+        mean=[123.675, 116.28, 103.53],
+        std=[58.395, 57.12, 57.375],
+        proc_trimap='onehot',
+        size_divisor=32,
+        resize_method='pad',
+        resize_mode='reflect',
+    ),
     backbone=dict(
         type='SimpleEncoderDecoder',
         encoder=dict(
@@ -18,13 +27,7 @@ model = dict(
             with_spectral_norm=True)),
     loss_alpha=dict(type='L1Loss'),
     pretrained='open-mmlab://mmedit/res34_en_nomixup',
-    preprocess_cfg=dict(
-        pixel_mean=[123.675, 116.28, 103.53],
-        pixel_std=[58.395, 57.12, 57.375],
-        to_rgb=True,
-        trimap='onehot'),
-    train_cfg=dict(train_backbone=True),
-    test_cfg=dict(pad_multiple=32, pad_mode='reflect'))
+)
 
 # dataset settings
 dataset_type = 'AdobeComp1kDataset'

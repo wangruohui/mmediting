@@ -1,23 +1,31 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import List, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import mmcv
 import numpy as np
 import torch
 import torch.nn.functional as F
 from mmcv import ConfigDict
-from mmcv.utils import print_log
-from mmengine import BaseModel
-
+from mmengine.logging import MMLogger
+from mmengine.model import BaseModel
+from mmengine.config import Config
+from mmengine.model import ImgDataPreprocessor, BaseDataPreprocessor
 from mmedit.data_element import EditDataSample, PixelData
 # from mmedit.core.evaluation import connectivity, gradient_error, mse, sad
 # from ..base import BaseModel
 # from ..builder import build_backbone, build_component
 from mmedit.registry import MODELS
+from mmengine.utils import stack_batch
+# 2022-02-20 22:26:38,860 - mmdet - INFO - this is a test
+
+DataSamples = Optional[Union[list, torch.Tensor]]
+ForwardResults = Union[Dict[str, torch.Tensor], List[EditDataSample],
+                       Tuple[torch.Tensor], torch.Tensor]
 
 
+# class TrimapBasedMattor(BaseModel, metaclass=ABCMeta):
 class BaseMattor(BaseModel, metaclass=ABCMeta):
     """Base class for matting model.
 
@@ -40,196 +48,41 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
         pretrained (str): Path of pretrained model.
     """
 
-    def __init__(self,
-                 backbone,
-                 refiner=None,
-                 preprocess_cfg=None,
-                 train_cfg=None,
-                 test_cfg=None,
-                 pretrained=None):
-        super().__init__(preprocess_cfg=preprocess_cfg)
+    def __init__(
+        self,
+        data_preprocessor: Union[dict, Config],
+        backbone: dict,
+        # refiner=None,
+        train_cfg: Optional[dict] = None,
+        test_cfg: Optional[dict] = None,
+        pretrained=None,
+    ):
+        # Initialize nn.Module
+        # Build data processor
+        super().__init__(data_preprocessor=data_preprocessor)
 
         self.train_cfg = train_cfg if train_cfg is not None else ConfigDict()
         self.test_cfg = test_cfg if test_cfg is not None else ConfigDict()
-        self.preprocess_cfg = preprocess_cfg if preprocess_cfg else ConfigDict(
-        )
 
         self.backbone = MODELS.build(backbone)
-        # build refiner if it's not None.
-        if refiner is None:
-            self.train_cfg['train_refiner'] = False
-            self.test_cfg['refine'] = False
-        else:
-            self.refiner = MODELS.build(refiner)
-
-        # if argument train_cfg is not None, validate if the config is proper.
-        if train_cfg is not None:
-            assert hasattr(self.train_cfg, 'train_refiner')
-            assert hasattr(self.test_cfg, 'refine')
-            if self.test_cfg.refine and not self.train_cfg.train_refiner:
-                print_log(
-                    'You are not training the refiner, but it is used for '
-                    'model forwarding.', 'root', logging.WARNING)
-
-            if not self.train_cfg.train_backbone:
-                self.freeze_backbone()
-
-        # validate if test config is proper
-        # if not hasattr(self.test_cfg, 'metrics'):
-        #     raise KeyError('Missing key "metrics" in test_cfg')
-
-        # if mmcv.is_list_of(self.test_cfg.metrics, str):
-        #     for metric in self.test_cfg.metrics:
-        #         if metric not in self.allowed_metrics:
-        #             raise KeyError(f'metric {metric} is not supported')
-        # elif self.test_cfg.metrics is not None:
-        #     raise TypeError('metrics must be None or a list of str')
 
         self.init_weights(pretrained)
 
-    @property
-    def with_refiner(self):
-        """Whether the matting model has a refiner.
-        """
-        return hasattr(self, 'refiner') and self.refiner is not None
-
-    def freeze_backbone(self):
-        """Freeze the backbone and only train the refiner.
-        """
-        self.backbone.eval()
-        for param in self.backbone.parameters():
-            param.requires_grad = False
-
     def init_weights(self, pretrained=None):
-        """Initialize the model network weights.
+        """Initialize the model with pretrained weights.
 
         Args:
             pretrained (str, optional): Path to the pretrained weight.
                 Defaults to None.
         """
         if pretrained is not None:
-            print_log(f'load model from: {pretrained}', logger='root')
-        self.backbone.init_weights(pretrained)
-        if self.with_refiner:
-            self.refiner.init_weights()
+            logger = MMLogger.get_instance(name='mmedit')
+            logger.warn(f'load model from: {pretrained}')
+            self.backbone.init_weights(pretrained)
+        # if self.with_refiner:
+        #     self.refiner.init_weights()
 
-    def preprocess(self, data: List[dict], training: bool
-                   ) -> Tuple[torch.Tensor, List[EditDataSample]]:
-
-        batch_inputs, batch_data_samples = super().preprocess(data, training)
-
-        # Collect all trimap as a batch
-        batch_trimap = []
-        for ds in batch_data_samples:
-            batch_trimap.append(ds.trimap.data)
-            del ds.trimap
-        batch_trimap = torch.stack(batch_trimap)
-
-        proc_trimap = self.preprocess_cfg.get('trimap', 'norm')
-        if proc_trimap == 'norm':
-            batch_trimap = batch_trimap / 255.0  # uint8->float32
-        elif proc_trimap == 'label':
-            batch_trimap[batch_trimap == 128] = 1
-            batch_trimap[batch_trimap == 255] = 2
-            batch_trimap = batch_trimap.to(torch.float32)
-        elif proc_trimap == 'onehot':
-            batch_trimap[batch_trimap == 128] = 1
-            batch_trimap[batch_trimap == 255] = 2
-            batch_trimap = F.one_hot(
-                batch_trimap.to(torch.long), num_classes=3)
-            # N 1 H W C -> N C H W
-            batch_trimap = batch_trimap[:, 0, :, :, :]
-            batch_trimap = batch_trimap.permute(0, 3, 1, 2)
-            batch_trimap = batch_trimap.to(torch.float32)
-
-        assert batch_inputs.ndim == batch_trimap.ndim == 4
-        # print(batch_inputs.shape)
-        # print(batch_trimap.shape)
-        assert batch_inputs.shape[-2:] == batch_trimap.shape[-2:], f"""
-            Expect batch_merged.shape[-2:] == batch_trimap.shape[-2:],
-            but got {batch_inputs.shape[-2:]} vs {batch_trimap.shape[-2:]}
-            """
-
-        # Stack image and trimap along channel dimension
-        # Currently, all model do this concat at the start of forwarding
-        # and data_sample is a very complex data structure
-        # so this is a simple work-around to make codes simpler
-        # print(f"batch_trimap.dtype = {batch_trimap.dtype}")
-
-        if not training:
-            # Pad the images to align with network downsample factor for testing
-            if 'pad_multiple' in self.test_cfg:
-                ds_factor = self.test_cfg['pad_multiple']
-                batch_inputs, pad_width = self._pad(batch_inputs, ds_factor)
-                batch_trimap, pad_width = self._pad(batch_trimap, ds_factor)
-                # for ds in batch_data_samples:
-                #     ds.set_field(
-                #         name='pad_width',
-                #         value=pad_width,
-                #         field_type='metainfo')
-            elif 'resize_to_multiple' in self.test_cfg:
-                ds_factor = self.test_cfg['resize_to_multiple']
-                batch_inputs, batch_trimap = self._interpolate(
-                    batch_inputs, batch_trimap, ds_factor)
-            else:
-                raise NotImplementedError
-
-        batch_concat = torch.cat((batch_inputs, batch_trimap), dim=1)
-        # print(batch_concat.shape)
-        # print(batch_concat)
-
-        # print(f"batch_concat.size() = {batch_concat.size()}")
-        return batch_concat, batch_data_samples
-
-    def _pad(self, data, ds_factor):
-        """Pad the images to align with network downsample factor for testing."""
-
-        # ds_factor should be a property of a given model
-        # ds_factor = getattr(self, 'ds_factor', self.test_cfg['pad_multiple'])
-        pad_mode = self.test_cfg['pad_mode']
-
-        h, w = data.shape[-2:]  # NCHW
-
-        new_h = ds_factor * ((h - 1) // ds_factor + 1)
-        new_w = ds_factor * ((w - 1) // ds_factor + 1)
-
-        pad_h = new_h - h
-        pad_w = new_w - w
-        pad = (pad_h, pad_w)
-        if new_h != h or new_w != w:
-            pad_width = (0, pad_w, 0, pad_h)  # torch.pad in reverse order
-            data = F.pad(data, pad_width, pad_mode)
-
-        return data, pad
-
-    def _interpolate(self, batch_image, batch_trimap, ds_factor):
-        """Interpolate images and trimaps to align the downsample factor."""
-
-        # ds_factor should be a property of a given model
-        interp_mode = self.test_cfg['interp_mode']
-
-        assert batch_image.shape[-2:] == batch_trimap.shape[-2:]
-
-        h, w = batch_image.shape[-2:]  # NCHW
-
-        new_h = h - (h % ds_factor)
-        new_w = w - (w % ds_factor)
-
-        size = (new_h, new_w)
-        if new_h != h or new_w != w:
-            batch_image = F.interpolate(
-                batch_image, size=size, mode=interp_mode)
-            batch_trimap = F.interpolate(
-                batch_trimap, size=size, mode='nearest')
-            # print(size, h, w)
-            # batch_image = F.interpolate(
-            #     batch_image, size_factor=ds_factor, mode=interp_mode)
-            # batch_trimap = F.interpolate(
-            #     batch_trimap, size_factor=ds_factor, mode=interp_mode)
-
-        return batch_image, batch_trimap
-
-    def restore_shape_dep(self, pred_alpha, data_sample):
+    def restore_shape(self, pred_alpha, data_sample):
         """Restore the predicted alpha to the original shape.
 
         The shape of the predicted alpha may not be the same as the shape of
@@ -245,6 +98,7 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
             np.ndarray: The reshaped predicted alpha.
         """
 
+        raise NotImplementedError
         pred_alpha = pred_alpha.squeeze()
         # print(pred_alpha.sum(), pred_alpha.max(), pred_alpha.min())
         ori_trimap = data_sample.ori_trimap.squeeze()
@@ -279,7 +133,7 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
 
     def postprocess(
         self,
-        inputs: torch.Tensor,  # N, 4, H, W, float32
+        # inputs: torch.Tensor,  # N, 4, H, W, float32
         pred_alpha: torch.Tensor,  # N, 1, H, W, float32
         data_samples: List[EditDataSample],
     ) -> List[EditDataSample]:
@@ -291,69 +145,12 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
         1. to uint8
         """
 
-        assert pred_alpha.ndim == 4  # N, 1, H, W, float32
-        # pred_alpha = pred_alpha[:, 0, :, :]
-
-        # trimap = inputs[:, -1, :, :]
-
-        # pred_alpha.clamp_(min=0, max=1)
-        # pred_alpha[trimap == 1] = 1
-        # pred_alpha[trimap == 0] = 0
-        # pred_alpha *= 255
-        # pred_alpha.round_()
-        # pred_alpha = pred_alpha.to(dtype=torch.uint8)
-
-        predictions = []
-        for pa, ds in zip(pred_alpha, data_samples):
-            # pa = self.restore_shape(pa, ds)
-            ori_h, ori_w = ds.ori_merged_shape[:2]
-            # print(ds.ori_merged_shape)
-            if 'pad_multiple' in self.test_cfg:
-                pa = pa[:, :ori_h, :ori_w]
-            elif 'resize_to_multiple' in self.test_cfg:
-                # print(pa.shape)
-                pa = F.interpolate(
-                    pa.unsqueeze(0),
-                    size=(ori_h, ori_w),
-                    mode=self.test_cfg['interp_mode'])[0]
-                # print(pa.shape)
-
-            pa = pa[0]
-            pa.clamp_(min=0, max=1)
-            ori_trimap = ds.ori_trimap
-            # trimap = torch.from_numpy(ds.ori_trimap).to(pa.device)
-            pa[ori_trimap == 255] = 1
-            pa[ori_trimap == 0] = 0
-
-            # pa = (trimap == 255) + (trimap == 128) * pa
-
-            pa *= 255
-            pa.round_()
-            pa = pa.to(dtype=torch.uint8)
-            # pa = pa.cpu().numpy()
-            pa_sample = EditDataSample(pred_alpha=PixelData(data=pa))
-            # No PixelData as it will shift 2-dim to 3-dim
-            predictions.append(pa_sample)
-        # end = time.time()
-        # torch.cuda.synchronize()
-
-        # print("time: ", end - middle, middle - start)
-        return predictions
-        # eval_result = self.evaluate(pred_alpha, meta)
-
-        #     if save_image:
-        #         self.save_image(pred_alpha, meta, save_path, iteration)
-
-        #     return {'pred_alpha': pred_alpha, 'eval_result': eval_result}
-
-    @abstractmethod
-    def _forward_test(self, inputs: torch.Tensor) -> torch.Tensor:
-        """Forward from inputs to pred_alpha in test mode."""
+        raise NotImplementedError
 
     def forward(self,
-                inputs: torch.Tensor,
-                data_samples: List[EditDataSample],
-                return_loss=False) -> List[EditDataSample]:
+                batch_inputs: torch.Tensor,
+                data_samples: DataSamples = None,
+                mode: str = 'feat') -> List[EditDataSample]:
         """Forward function in test mode.
 
         Args:
@@ -371,15 +168,19 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
             List[EditDataElement]:
                 Sequence of predictions packed into EditDataElement
         """
-        # assert len(inputs) == 1, (
-        #     'Currently only batch size=1 is supported, '
-        #     'because different image can be of different resolution')
 
-        # import time, torch
-        # start = time.time()
-        # torch.cuda.synchronize()
-        pred_alpha = self._forward_test(inputs)
-        predictions = self.postprocess(inputs, pred_alpha, data_samples)
-        # torch.cuda.synchronize()
-        # middle = time.time()
-        return predictions
+        if mode == 'feat':
+            raw = self._forward(batch_inputs, data_samples)
+            return raw
+        elif mode == 'predict':
+            pred_alpha = self._forward_test(batch_inputs, data_samples)
+            predictions = self.data_preprocessor.postprocess(
+                pred_alpha, data_samples)
+            return predictions
+        elif mode == 'loss':
+            loss = self._forward_train(batch_inputs, data_samples)
+            return loss
+
+    def forward_dummy(self, inputs):
+        """For ONNX."""
+        return self._forward(inputs, self.with_refiner)

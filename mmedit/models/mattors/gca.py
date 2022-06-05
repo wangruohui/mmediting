@@ -28,14 +28,18 @@ class GCA(BaseMattor):
     """
 
     def __init__(self,
+                 data_preprocessor,
                  backbone,
-                 preprocess_cfg=None,
                  train_cfg=None,
                  test_cfg=None,
                  pretrained=None,
                  loss_alpha=None):
-        super().__init__(backbone, None, preprocess_cfg, train_cfg, test_cfg,
-                         pretrained)
+        super().__init__(
+            backbone=backbone,
+            data_preprocessor=data_preprocessor,
+            pretrained=pretrained,
+            train_cfg=train_cfg,
+            test_cfg=test_cfg)
         self.loss_alpha = MODELS.build(loss_alpha)
         # support fp16
         # self.fp16_enabled = False
@@ -66,8 +70,8 @@ class GCA(BaseMattor):
         pred_alpha = (raw_alpha.tanh() + 1.0) / 2.0
         return pred_alpha
 
-    def forward_dummy(self, inputs):
-        return self._forward(inputs)
+    # def forward_dummy(self, inputs):
+    #     return self._forward(inputs)
 
     # def forward_train(self, merged, trimap, meta, alpha):
     #     """Forward function for training GCA model.

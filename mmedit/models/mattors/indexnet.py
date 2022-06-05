@@ -24,27 +24,33 @@ class IndexNet(BaseMattor):
         loss_comp (dict): Config of the composition loss. Default: None.
     """
 
-    def __init__(self,
-                 backbone,
-                 preprocess_cfg=None,
-                 train_cfg=None,
-                 test_cfg=None,
-                 pretrained=None,
-                 loss_alpha=None,
-                 loss_comp=None):
-        super().__init__(backbone, None, preprocess_cfg, train_cfg, test_cfg,
-                         pretrained)
+    def __init__(
+        self,
+        data_preprocessor,
+        backbone,
+        loss_alpha=None,
+        loss_comp=None,
+        train_cfg=None,
+        test_cfg=None,
+        pretrained=None,
+    ):
+        super().__init__(
+            backbone=backbone,
+            data_preprocessor=data_preprocessor,
+            pretrained=pretrained,
+            train_cfg=train_cfg,
+            test_cfg=test_cfg)
 
         self.loss_alpha = (
             MODELS.build(loss_alpha) if loss_alpha is not None else None)
         self.loss_comp = (
             MODELS.build(loss_comp) if loss_comp is not None else None)
 
-        # support fp16
-        self.fp16_enabled = False
+    #     # support fp16
+    #     self.fp16_enabled = False
 
-    def forward_dummy(self, inputs):
-        return self.backbone(inputs)
+    # def forward_dummy(self, inputs):
+    #     return self.backbone(inputs)
 
     @auto_fp16(apply_to=('merged', 'trimap'))
     def forward_train(self, merged, trimap, meta, alpha, ori_merged, fg, bg):
