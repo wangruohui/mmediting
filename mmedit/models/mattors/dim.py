@@ -128,9 +128,9 @@ class DIM(BaseMattor):
             pred_refine = torch.zeros([])
         return pred_alpha, pred_refine
 
-    def _forward_test(self, x):
+    def _forward_test(self, inputs, data_samples):
         """Forward to get alpha prediction."""
-        pred_alpha, pred_refine = self._forward(x, self.test_cfg.refine)
+        pred_alpha, pred_refine = self._forward(inputs, self.test_cfg.refine)
         if self.test_cfg.refine:
             return pred_refine
         else:

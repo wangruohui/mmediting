@@ -173,6 +173,7 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
             raw = self._forward(batch_inputs, data_samples)
             return raw
         elif mode == 'predict':
+            # Pre-process runs in runner
             pred_alpha = self._forward_test(batch_inputs, data_samples)
             predictions = self.data_preprocessor.postprocess(
                 pred_alpha, data_samples)
