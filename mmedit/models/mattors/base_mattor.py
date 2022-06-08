@@ -17,7 +17,7 @@ from mmedit.data_element import EditDataSample, PixelData
 # from ..base import BaseModel
 # from ..builder import build_backbone, build_component
 from mmedit.registry import MODELS
-from mmengine.utils import stack_batch
+# from mmengine.utils import stack_batch
 # 2022-02-20 22:26:38,860 - mmdet - INFO - this is a test
 
 DataSamples = Optional[Union[list, torch.Tensor]]

@@ -84,6 +84,8 @@ train_dataloader = dict(batch_size=1, dataset=dict(pipeline=train_pipeline))
 
 val_dataloader = dict(batch_size=1, dataset=dict(pipeline=test_pipeline))
 
+test_dataloader = val_dataloader
+
 train_cfg = dict(
     type='IterBasedTrainLoop',
     max_iters=1_000_000,
