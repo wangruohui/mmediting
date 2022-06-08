@@ -50,12 +50,8 @@ def main():
     if args.cfg_options is not None:
         cfg.merge_from_dict(args.cfg_options)
 
-    # Create mmedit logger
-    logger = MMLogger.get_instance(name='mmedit', logger_name='mmedit')
-    logger.info(cfg.pretty_text)
-
     # work_dir is determined in this priority: CLI > segment in file > filename
-    if args.work_dir is not None:
+    if args.work_dir:  # none or empty str
         # update configs according to CLI args if args.work_dir is not None
         cfg.work_dir = args.work_dir
     elif cfg.get('work_dir', None) is None:
@@ -64,13 +60,16 @@ def main():
                                 osp.splitext(osp.basename(args.config))[0])
 
     # Create mmedit logger
-    MMLogger.get_instance(name='mmedit', logger_name='mmedit')
+    logger = MMLogger.get_instance(name='mmedit', logger_name='mmedit')
+    logger.info(f"Configs:\n{cfg.pretty_text}")
 
     # build the runner from config
     runner = Runner.from_cfg(cfg)
 
     # start training
     runner.train()
+
+    logger.info(f"Results saved under {cfg.work_dir}")
 
 
 if __name__ == '__main__':
