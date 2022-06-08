@@ -50,6 +50,10 @@ def main():
     if args.cfg_options is not None:
         cfg.merge_from_dict(args.cfg_options)
 
+    # Create mmedit logger
+    logger = MMLogger.get_instance(name='mmedit', logger_name='mmedit')
+    logger.info(cfg.pretty_text)
+
     # work_dir is determined in this priority: CLI > segment in file > filename
     if args.work_dir is not None:
         # update configs according to CLI args if args.work_dir is not None

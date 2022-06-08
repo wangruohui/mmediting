@@ -144,5 +144,5 @@ optim_wrapper = dict(
 # resume_from = None
 # workflow = [('train', 1)]
 
-load_from = '.checkpoints/dim_stage2_v16_pln_1x1_1000k_comp1k_SAD-52.3_20200607_171909-d83c4775.pth'
+load_from = './checkpoints/dim_stage2_v16_pln_1x1_1000k_comp1k_SAD-52.3_20200607_171909-d83c4775.pth'
 default_hooks = dict(checkpoint=dict(type='CheckpointHook', interval=40000))

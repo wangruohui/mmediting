@@ -33,12 +33,12 @@ train_pipeline = [
     dict(type='LoadImageFromFile', key='merged'),
     dict(
         type='CropAroundUnknown',
-        keys=['alpha', 'merged', 'ori_merged', 'fg', 'bg'],
+        keys=['alpha', 'merged', 'fg', 'bg'],
         crop_sizes=[320, 480, 640]),
-    dict(type='Flip', keys=['alpha', 'merged', 'ori_merged', 'fg', 'bg']),
+    dict(type='Flip', keys=['alpha', 'merged', 'fg', 'bg']),
     dict(
         type='Resize',
-        keys=['alpha', 'merged', 'ori_merged', 'fg', 'bg'],
+        keys=['alpha', 'merged', 'fg', 'bg'],
         scale=(320, 320),
         keep_ratio=False),
     dict(type='GenerateTrimap', kernel_size=(1, 30)),
@@ -114,7 +114,7 @@ optim_wrapper = dict(
 #         # dict(type='PaviLoggerHook', init_kwargs=dict(project='dim'))
 #     ])
 
-default_hooks = dict(checkpoint=dict(type='CheckpointHook', interval=40000), )
+default_hooks = dict(checkpoint=dict(type='CheckpointHook', interval=40000))
 
 # # runtime settings
 # total_iters = 1000000
