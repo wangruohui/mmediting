@@ -30,7 +30,7 @@ train_pipeline = [
     dict(type='LoadImageFromFile', key='alpha', color_type='grayscale'),
     dict(type='LoadImageFromFile', key='fg'),
     dict(type='LoadImageFromFile', key='bg'),
-    dict(type='LoadImageFromFile', key='merged', save_original_img=True),
+    dict(type='LoadImageFromFile', key='merged'),
     dict(
         type='CropAroundUnknown',
         keys=['alpha', 'merged', 'ori_merged', 'fg', 'bg'],
