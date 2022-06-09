@@ -39,7 +39,7 @@ val_dataloader = dict(
     num_workers=4,
     persistent_workers=False,
     drop_last=False,
-    sampler=dict(type='InfiniteSampler', shuffle=False),
+    sampler=dict(type='DefaultSampler', shuffle=False),
     dataset=dict(
         type=dataset_type,
         data_root=data_root,
