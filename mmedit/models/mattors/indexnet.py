@@ -52,8 +52,15 @@ class IndexNet(BaseMattor):
     # def forward_dummy(self, inputs):
     #     return self.backbone(inputs)
 
-    @auto_fp16(apply_to=('merged', 'trimap'))
-    def forward_train(self, merged, trimap, meta, alpha, ori_merged, fg, bg):
+    def _forward(self, inputs, data_samples):
+        pred_alpha = self.backbone(inputs)
+        return pred_alpha
+
+    def _forward_test(self, inputs, data_samples):
+        return self._forward(inputs)
+
+    # @auto_fp16(apply_to=('merged', 'trimap'))
+    def _forward_train(self, inputs, data_samples):
         """Forward function for training IndexNet model.
 
         Args:
@@ -70,17 +77,24 @@ class IndexNet(BaseMattor):
         Returns:
             dict: Contains the loss items and batch information.
         """
-        pred_alpha = self.backbone(torch.cat((merged, trimap), 1))
+        trimap = inputs[:, 3:, :, :]
+        gt_alpha = torch.stack(tuple(ds.gt_alpha.data for ds in data_samples))
+        gt_fg = torch.stack(tuple(ds.gt_fg.data for ds in data_samples))
+        gt_bg = torch.stack(tuple(ds.gt_bg.data for ds in data_samples))
+        gt_merged = torch.stack(
+            tuple(ds.gt_merged.data for ds in data_samples))
+
+        pred_alpha = self.backbone(inputs)
+
+        weight = get_unknown_tensor(trimap, unknown_value=128 / 255)
 
         losses = dict()
-        weight = get_unknown_tensor(trimap, meta)
-        if self.loss_alpha is not None:
-            losses['loss_alpha'] = self.loss_alpha(pred_alpha, alpha, weight)
-        if self.loss_comp is not None:
-            losses['loss_comp'] = self.loss_comp(pred_alpha, fg, bg,
-                                                 ori_merged, weight)
-        return {'losses': losses, 'num_samples': merged.size(0)}
 
-    def _forward_test(self, x):
-        pred_alpha = self.backbone(x)
-        return pred_alpha
+        if self.loss_alpha is not None:
+            losses['loss_alpha'] = self.loss_alpha(pred_alpha, gt_alpha,
+                                                   weight)
+        if self.loss_comp is not None:
+            losses['loss_comp'] = self.loss_comp(pred_alpha, gt_fg, gt_bg,
+                                                 gt_merged, weight)
+        return losses
+        # return {'losses': losses, 'num_samples': merged.size(0)}

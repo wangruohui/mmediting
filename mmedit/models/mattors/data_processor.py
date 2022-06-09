@@ -49,7 +49,7 @@ def _interpolate(batch_image, ds_factor, mode='bicubic'):
 
 @MODELS.register_module()
 class ImageAndTrimapPreprocessor(BaseDataPreprocessor):
-    """Image and Trimap pre-processor for trimap-based matting models.
+    """Image and trimap pre-processor for trimap-based matting models.
 
     Accept the data sampled by the dataLoader, and preprocesses it into the
     format of the model input. ``ImgDataPreprocessor`` provides the
@@ -91,9 +91,8 @@ class ImageAndTrimapPreprocessor(BaseDataPreprocessor):
                  trimap_proc: str = 'rescale_to_zero_one',
                  size_divisor: int = 32,
                  resize_method: str = 'pad',
-                 resize_mode: str = 'reflect',
-                 device: Union[int, torch.device] = 'cpu'):
-        super().__init__(device)
+                 resize_mode: str = 'reflect'):
+        super().__init__()
         self.register_buffer('mean', torch.tensor(mean).view(-1, 1, 1), False)
         self.register_buffer('std', torch.tensor(std).view(-1, 1, 1), False)
         self.trimap_proc = trimap_proc

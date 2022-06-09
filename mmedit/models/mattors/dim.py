@@ -165,6 +165,7 @@ class DIM(BaseMattor):
                                                 self.train_cfg.train_refiner)
 
         weight = get_unknown_tensor(trimap, unknown_value=128 / 255)
+
         losses = dict()
         if self.train_cfg.train_backbone:
             if self.loss_alpha is not None:
