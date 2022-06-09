@@ -25,10 +25,9 @@ data_root = 's3://openmmlab/datasets/editing/adobe_composition-1k'
 #         pipeline=test_pipeline))
 
 train_dataloader = dict(
-    batch_size=1,
     num_workers=4,
-    persistent_workers=True,
-    sampler=dict(type='DefaultSampler', shuffle=True),
+    persistent_workers=False,
+    sampler=dict(type='InfiniteSampler', shuffle=True),
     dataset=dict(
         type=dataset_type,
         data_root=data_root,
@@ -37,11 +36,10 @@ train_dataloader = dict(
     ))
 
 val_dataloader = dict(
-    batch_size=1,
     num_workers=4,
-    persistent_workers=True,
+    persistent_workers=False,
     drop_last=False,
-    sampler=dict(type='DefaultSampler', shuffle=False),
+    sampler=dict(type='InfiniteSampler', shuffle=False),
     dataset=dict(
         type=dataset_type,
         data_root=data_root,
