@@ -45,7 +45,7 @@ class GCA(BaseMattor):
         # self.fp16_enabled = False
 
     # @auto_fp16(apply_to=('x', ))
-    def _forward_test(self, x):
+    def _forward(self, inputs, data_samples):
         # trimap = x[:, -1, :, :]
         # trimap *= 2
         # trimap[trimap == 256 / 255] = 1
@@ -66,32 +66,39 @@ class GCA(BaseMattor):
         # print(x.min())
         # print(x.max())
         # print(x.sum())
-        raw_alpha = self.backbone(x)
+        raw_alpha = self.backbone(inputs)
         pred_alpha = (raw_alpha.tanh() + 1.0) / 2.0
         return pred_alpha
+
+    def _forward_test(self, inputs, data_samples):
+        return self._forward(inputs, data_samples)
 
     # def forward_dummy(self, inputs):
     #     return self._forward(inputs)
 
-    # def forward_train(self, merged, trimap, meta, alpha):
-    #     """Forward function for training GCA model.
+    def _forward_train(self, inputs, data_samples):
+        """Forward function for training GCA model.
 
-    #     Args:
-    #         merged (Tensor): with shape (N, C, H, W) encoding input images.
-    #             Typically these should be mean centered and std scaled.
-    #         trimap (Tensor): with shape (N, C', H, W). Tensor of trimap. C'
-    #             might be 1 or 3.
-    #         meta (list[dict]): Meta data about the current data batch.
-    #         alpha (Tensor): with shape (N, 1, H, W). Tensor of alpha.
+        Args:
+            merged (Tensor): with shape (N, C, H, W) encoding input images.
+                Typically these should be mean centered and std scaled.
+            trimap (Tensor): with shape (N, C', H, W). Tensor of trimap. C'
+                might be 1 or 3.
+            meta (list[dict]): Meta data about the current data batch.
+            alpha (Tensor): with shape (N, 1, H, W). Tensor of alpha.
 
-    #     Returns:
-    #         dict: Contains the loss items and batch information.
-    #     """
-    #     pred_alpha = self._forward(torch.cat((merged, trimap), 1))
+        Returns:
+            dict: Contains the loss items and batch information.
+        """
+        trimap = inputs[:, 3:, :, :]
+        gt_alpha = torch.stack(tuple(ds.gt_alpha.data for ds in data_samples))
+        pred_alpha = self._forward(inputs, data_samples)
 
-    #     weight = get_unknown_tensor(trimap, meta)
-    #     losses = {'loss': self.loss_alpha(pred_alpha, alpha, weight)}
-    #     return {'losses': losses, 'num_samples': merged.size(0)}
+        weight = get_unknown_tensor(trimap, unknown_value=128 / 255)
+
+        losses = {'loss': self.loss_alpha(pred_alpha, gt_alpha, weight)}
+        return losses
+        # return {'losses': losses, 'num_samples': merged.size(0)}
 
     # def forward_test(self,
     #                  merged,

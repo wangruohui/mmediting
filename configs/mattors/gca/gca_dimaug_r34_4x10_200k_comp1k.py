@@ -1,8 +1,19 @@
-_base_ = ['../default_runtime.py']
+_base_ = ['../comp1k.py', '../default_runtime.py']
 
 # model settings
 model = dict(
     type='GCA',
+    data_preprocessor=dict(
+        type='ImageAndTrimapPreprocessor',
+        mean=[123.675, 116.28, 103.53],
+        std=[58.395, 57.12, 57.375],
+        to_rgb=True,
+        trimap_proc='label',
+        inputs_only=True,
+        size_divisor=32,
+        resize_method='pad',
+        resize_mode='reflect',
+    ),
     backbone=dict(
         type='SimpleEncoderDecoder',
         encoder=dict(
@@ -18,11 +29,6 @@ model = dict(
             with_spectral_norm=True)),
     loss_alpha=dict(type='L1Loss'),
     pretrained='open-mmlab://mmedit/res34_en_nomixup',
-    preprocess_cfg=dict(
-        pixel_mean=[123.675, 116.28, 103.53],
-        pixel_std=[58.395, 57.12, 57.375],
-        to_rgb=True,
-        trimap='label'),
     train_cfg=dict(train_backbone=True),
     test_cfg=dict(pad_multiple=32, pad_mode='reflect'))
 
@@ -32,26 +38,27 @@ data_root = 'data/adobe_composition-1k'
 bg_dir = './data/coco/train2017'
 # img_norm_cfg = dict(
 #     mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225], to_rgb=True)
-# train_pipeline = [
-#     dict(type='LoadImageFromFile', key='alpha', flag='grayscale'),
-#     dict(type='LoadImageFromFile', key='merged'),
-#     dict(
-#         type='CropAroundUnknown',
-#         keys=['alpha', 'merged'],
-#         crop_sizes=[320, 480, 640]),
-#     dict(type='Flip', keys=['alpha', 'merged']),
-#     dict(
-#         type='Resize',
-#         keys=['alpha', 'merged'],
-#         scale=(320, 320),
-#         keep_ratio=False),
-#     dict(type='GenerateTrimap', kernel_size=(1, 30)),
-#     dict(type='RescaleToZeroOne', keys=['merged', 'alpha']),
-#     dict(type='Normalize', keys=['merged'], **img_norm_cfg),
-#     dict(type='Collect', keys=['merged', 'alpha', 'trimap'], meta_keys=[]),
-#     dict(type='ImageToTensor', keys=['merged', 'alpha', 'trimap']),
-#     dict(type='FormatTrimap', to_onehot=False),
-# ]
+train_pipeline = [
+    dict(type='LoadImageFromFile', key='alpha', color_type='grayscale'),
+    dict(type='LoadImageFromFile', key='merged'),
+    dict(
+        type='CropAroundUnknown',
+        keys=['alpha', 'merged'],
+        crop_sizes=[320, 480, 640]),
+    dict(type='Flip', keys=['alpha', 'merged']),
+    dict(
+        type='Resize',
+        keys=['alpha', 'merged'],
+        scale=(320, 320),
+        keep_ratio=False),
+    dict(type='GenerateTrimap', kernel_size=(1, 30)),
+    # dict(type='RescaleToZeroOne', keys=['merged', 'alpha']),
+    # dict(type='Normalize', keys=['merged'], **img_norm_cfg),
+    # dict(type='Collect', keys=['merged', 'alpha', 'trimap'], meta_keys=[]),
+    # dict(type='ImageToTensor', keys=['merged', 'alpha', 'trimap']),
+    # dict(type='FormatTrimap', to_onehot=False),
+    dict(type='PackEditInputs'),
+]
 test_pipeline = [
     dict(
         type='LoadImageFromFile',
@@ -98,34 +105,52 @@ test_pipeline = [
 #         data_prefix=data_root,
 #         pipeline=test_pipeline))
 
+train_dataloader = dict(
+    batch_size=10,
+    # num_workers=8,
+    # batch_size=4,
+    num_workers=1,
+    dataset=dict(pipeline=train_pipeline),
+)
+
 val_dataloader = dict(
     batch_size=1,
-    num_workers=2,
-    persistent_workers=False,
-    drop_last=False,
-    sampler=dict(type='DefaultSampler', shuffle=False),
-    dataset=dict(
-        type=dataset_type,
-        data_root=data_root,
-        ann_file='test_list.json',
-        test_mode=True,
-        pipeline=test_pipeline))
+    num_workers=1,
+    # num_workers=8,
+    dataset=dict(pipeline=test_pipeline),
+)
+
 test_dataloader = val_dataloader
 
-val_evaluator = [
-    dict(type='SAD'),
-    dict(type='MSE'),
-    dict(type='GradientError'),
-    dict(type='ConnectivityError'),
-]
-test_evaluator = val_evaluator
+train_cfg = dict(
+    type='IterBasedTrainLoop',
+    max_iters=200_000,
+    val_interval=10_000,
+)
+val_cfg = dict(type='ValLoop')
+test_cfg = dict(type='TestLoop')
 
-val_cfg = dict(interval=1)
-test_cfg = dict()
-
-# # optimizer
+# optimizer
+optim_wrapper = dict(optimizer=dict(type='Adam', lr=4e-4, betas=[0.5, 0.999]))
 # optimizers = dict(type='Adam', lr=4e-4, betas=[0.5, 0.999])
-# # learning policy
+# learning policy
+param_scheduler = [
+    dict(
+        type='LinearLR',
+        start_factor=0.001,
+        begin=0,
+        end=5000,
+        by_epoch=False,  # 按迭代更新学习率
+    ),
+    dict(
+        type='CosineAnnealingLR',
+        T_max=200_000,  ## TODO, need more check
+        eta_min=0,
+        begin=5000,
+        end=200_000,
+        by_epoch=False,  # 按迭代更新学习率
+    )
+]
 # lr_config = dict(
 #     policy='CosineAnnealing',
 #     min_lr=0,
