@@ -57,7 +57,7 @@ class IndexNet(BaseMattor):
         return pred_alpha
 
     def _forward_test(self, inputs, data_samples):
-        return self._forward(inputs)
+        return self._forward(inputs, data_samples)
 
     # @auto_fp16(apply_to=('merged', 'trimap'))
     def _forward_train(self, inputs, data_samples):
