@@ -78,85 +78,96 @@ class ImageAndTrimapPreprocessor(BaseDataPreprocessor):
         pad_size_divisor (int): The size of padded image should be
             divisible by ``pad_size_divisor``. Defaults to 1.
         pad_value (float or int): The padded pixel value. Defaults to 0.
-        to_rgb (bool): whether to convert image from BGR to RGB.
+        bgr_to_rgb (bool): whether to convert image from BGR to RGB.
             Defaults to False.
-        device (int or torch.device): Target device.
     """
 
     def __init__(self,
                  mean: float = [123.675, 116.28, 103.53],
                  std: float = [58.395, 57.12, 57.375],
-                 to_rgb: bool = True,
-                 inputs_only=False,
-                 trimap_proc: str = 'rescale_to_zero_one',
-                 size_divisor: int = 32,
-                 resize_method: str = 'pad',
-                 resize_mode: str = 'reflect'):
+                 bgr_to_rgb: bool = True,
+                 proc_inputs: str = 'normalize',
+                 proc_trimap: str = 'rescale_to_zero_one',
+                 proc_gt: str = 'rescale_to_zero_one'):
         super().__init__()
         self.register_buffer('mean', torch.tensor(mean).view(-1, 1, 1), False)
         self.register_buffer('std', torch.tensor(std).view(-1, 1, 1), False)
-        self.trimap_proc = trimap_proc
-        self.size_divisor = size_divisor
-        self.resize_method = resize_method
-        self.resize_mode = resize_mode
-        self.to_rgb = to_rgb
-        self.inputs_only = inputs_only
+        self.bgr_to_rgb = bgr_to_rgb
+        self.proc_inputs = proc_inputs
+        self.proc_trimap = proc_trimap
+        self.proc_gt = proc_gt
 
     def _proc_inputs(self, inputs: List[torch.Tensor]):
-        # bgr to rgb
-        if self.to_rgb and inputs[0].size(0) == 3:
-            inputs = [_input[[2, 1, 0], ...] for _input in inputs]
-        # Normalization.
-        inputs = [(_input - self.mean) / self.std for _input in inputs]
-        # Stack Tensor.
-        batch_inputs = torch.stack(inputs)
-        assert batch_inputs.ndim == 4
-
-        return batch_inputs
-
-    def _proc_images_in_data_sample(self, data_samples, key):
-        for ds in data_samples:
+        if self.proc_inputs == 'normalize':
             # bgr to rgb
-            value = getattr(ds, key)
-            ispixeldata = False
-            if isinstance(value, PixelData):
-                ispixeldata = True
-                value = value.data
-
-            if self.to_rgb and value[0].size(0) == 3:
-                value = value[[2, 1, 0], ...]
-            # Rescale to 0 to 1 for gt_fg/gt_bg/gt_merged
-            # No inplace here!
-            value = value / 255.0
+            if self.bgr_to_rgb and inputs[0].size(0) == 3:
+                inputs = [_input[[2, 1, 0], ...] for _input in inputs]
+            # Normalization.
+            inputs = [(_input - self.mean) / self.std for _input in inputs]
             # Stack Tensor.
-            assert value.ndim == 3
+            batch_inputs = torch.stack(inputs)
+        else:
+            raise ValueError(
+                f'proc_inputs = {self.proc_inputs} is not supported.')
 
-            if ispixeldata:
-                value = PixelData(data=value)
-            setattr(ds, key, value)
-
-        return data_samples
+        assert batch_inputs.ndim == 4
+        return batch_inputs
 
     def _proc_trimap(self, trimaps: List[torch.Tensor]):
         batch_trimaps = torch.stack(trimaps)
 
-        if self.trimap_proc == 'rescale_to_zero_one':
+        if self.proc_trimap == 'rescale_to_zero_one':
             batch_trimaps = batch_trimaps / 255.0  # uint8->float32
-        elif self.trimap_proc == 'label':
-            batch_trimaps[batch_trimaps == 128] = 1
-            batch_trimaps[batch_trimaps == 255] = 2
+        elif self.proc_trimap == 'as_is':
             batch_trimaps = batch_trimaps.to(torch.float32)
-        elif self.trimap_proc == 'onehot':
-            batch_trimaps[batch_trimaps == 128] = 1
-            batch_trimaps[batch_trimaps == 255] = 2
-            batch_trimaps = F.one_hot(
-                batch_trimaps.to(torch.long), num_classes=3)
-            # N 1 H W C -> N C H W
-            batch_trimaps = batch_trimaps[:, 0, :, :, :]
-            batch_trimaps = batch_trimaps.permute(0, 3, 1, 2)
-            batch_trimaps = batch_trimaps.to(torch.float32)
+        # elif self.trimap_proc == 'label':
+        #     batch_trimaps[batch_trimaps == 128] = 1
+        #     batch_trimaps[batch_trimaps == 255] = 2
+        #     batch_trimaps = batch_trimaps.to(torch.float32)
+        # elif self.trimap_proc == 'onehot':
+        #     batch_trimaps[batch_trimaps == 128] = 1
+        #     batch_trimaps[batch_trimaps == 255] = 2
+        #     batch_trimaps = F.one_hot(
+        #         batch_trimaps.to(torch.long), num_classes=3)
+        #     # N 1 H W C -> N C H W
+        #     batch_trimaps = batch_trimaps[:, 0, :, :, :]
+        #     batch_trimaps = batch_trimaps.permute(0, 3, 1, 2)
+        #     batch_trimaps = batch_trimaps.to(torch.float32)
+        else:
+            raise ValueError(
+                f'proc_trimap = {self.proc_trimap} is not supported.')
 
         return batch_trimaps
+
+    def _proc_gt(self, data_samples, key):
+        assert key.startswith('gt')
+        # Rescale gt_fg / gt_bg / gt_merged / gt_alpha to 0 to 1
+        if self.proc_gt == 'rescale_to_zero_one':
+            for ds in data_samples:
+                try:
+                    value = getattr(ds, key)
+                except AttributeError:
+                    continue
+
+                ispixeldata = isinstance(value, PixelData)
+                if ispixeldata:
+                    value = value.data
+
+                # !! DO NOT process trimap here, as trimap may have dim == 3
+                if self.bgr_to_rgb and value[0].size(0) == 3:
+                    value = value[[2, 1, 0], ...]
+
+                value = value / 255.0  # uint8 -> float32 No inplace here
+
+                assert value.ndim == 3
+
+                if ispixeldata:
+                    value = PixelData(data=value)
+                setattr(ds, key, value)
+        else:
+            raise ValueError(f'proc_gt = {self.proc_gt} is not supported.')
+
+        return data_samples
 
     def forward(self,
                 data: Sequence[dict],
@@ -182,32 +193,34 @@ class ImageAndTrimapPreprocessor(BaseDataPreprocessor):
         batch_images = self._proc_inputs(images)
         batch_trimaps = self._proc_trimap(trimaps)
 
-        if training and (not self.inputs_only):
-            self._proc_images_in_data_sample(batch_data_samples, 'gt_fg')
-            self._proc_images_in_data_sample(batch_data_samples, 'gt_bg')
-            self._proc_images_in_data_sample(batch_data_samples, 'gt_merged')
-            self._proc_images_in_data_sample(batch_data_samples, 'gt_alpha')
+        if training:
+            self._proc_gt(batch_data_samples, 'gt_fg')
+            self._proc_gt(batch_data_samples, 'gt_bg')
+            self._proc_gt(batch_data_samples, 'gt_merged')
+            # For training, gt_alpha ranges from 0-1, is used to compute loss
+            # For testing, ori_alpha is used
+            self._proc_gt(batch_data_samples, 'gt_alpha')
+
+        # if not training:
+        #     # Pad the images to align with network downsample factor for testing
+        #     if self.resize_method == 'pad':
+        #         batch_images, _ = _pad(batch_images, self.size_divisor,
+        #                                self.resize_mode)
+        #         batch_trimaps, _ = _pad(batch_trimaps, self.size_divisor,
+        #                                 self.resize_mode)
+        #     elif self.resize_method == 'interp':
+        #         batch_images, _ = _interpolate(batch_images, self.size_divisor,
+        #                                        self.resize_mode)
+        #         batch_trimaps, _ = _interpolate(batch_trimaps,
+        #                                         self.size_divisor, 'nearest')
+        #     else:
+        #         raise NotImplementedError
 
         # Stack image and trimap along channel dimension
-        # Currently, all model do this concat at the start of forwarding
+        # All existing models do concat at the start of forwarding
         # and data_sample is a very complex data structure
         # so this is a simple work-around to make codes simpler
         # print(f"batch_trimap.dtype = {batch_trimap.dtype}")
-
-        if not training:
-            # Pad the images to align with network downsample factor for testing
-            if self.resize_method == 'pad':
-                batch_images, _ = _pad(batch_images, self.size_divisor,
-                                       self.resize_mode)
-                batch_trimaps, _ = _pad(batch_trimaps, self.size_divisor,
-                                        self.resize_mode)
-            elif self.resize_method == 'interp':
-                batch_images, _ = _interpolate(batch_images, self.size_divisor,
-                                               self.resize_mode)
-                batch_trimaps, _ = _interpolate(batch_trimaps,
-                                                self.size_divisor, 'nearest')
-            else:
-                raise NotImplementedError
 
         assert batch_images.ndim == batch_trimaps.ndim == 4
         assert batch_images.shape[-2:] == batch_trimaps.shape[-2:], f"""
@@ -215,6 +228,7 @@ class ImageAndTrimapPreprocessor(BaseDataPreprocessor):
             but got {batch_images.shape[-2:]} vs {batch_trimaps.shape[-2:]}
             """
 
+        # N, (4/6), H, W
         batch_inputs = torch.cat((batch_images, batch_trimaps), dim=1)
 
         return batch_inputs, batch_data_samples
@@ -247,65 +261,65 @@ class ImageAndTrimapPreprocessor(BaseDataPreprocessor):
         ]
         return inputs, trimaps, batch_data_samples
 
-    def postprocess(
-        self,
-        # inputs: torch.Tensor,  # N, 4, H, W, float32
-        pred_alpha: torch.Tensor,  # N, 1, H, W, float32
-        data_samples: List[EditDataSample],
-    ) -> List[EditDataSample]:
-        """Post-processing for alpha predictions.
+    # def postprocess(
+    #     self,
+    #     # inputs: torch.Tensor,  # N, 4, H, W, float32
+    #     pred_alpha: torch.Tensor,  # N, 1, H, W, float32
+    #     data_samples: List[EditDataSample],
+    # ) -> List[EditDataSample]:
+    #     """Post-processing for alpha predictions.
 
-        1. Restore padded shape
-        1. Mask with trimap
-        1. clamp to 0-1
-        1. to uint8
-        """
+    #     1. Restore padded shape
+    #     1. Mask with trimap
+    #     1. clamp to 0-1
+    #     1. to uint8
+    #     """
 
-        assert pred_alpha.ndim == 4  # N, 1, H, W, float32
-        assert len(pred_alpha) == len(data_samples) == 1
-        # pred_alpha = pred_alpha[:, 0, :, :]
+    #     assert pred_alpha.ndim == 4  # N, 1, H, W, float32
+    #     assert len(pred_alpha) == len(data_samples) == 1
+    #     # pred_alpha = pred_alpha[:, 0, :, :]
 
-        # trimap = inputs[:, -1, :, :]
+    #     # trimap = inputs[:, -1, :, :]
 
-        # pred_alpha.clamp_(min=0, max=1)
-        # pred_alpha[trimap == 1] = 1
-        # pred_alpha[trimap == 0] = 0
-        # pred_alpha *= 255
-        # pred_alpha.round_()
-        # pred_alpha = pred_alpha.to(dtype=torch.uint8)
+    #     # pred_alpha.clamp_(min=0, max=1)
+    #     # pred_alpha[trimap == 1] = 1
+    #     # pred_alpha[trimap == 0] = 0
+    #     # pred_alpha *= 255
+    #     # pred_alpha.round_()
+    #     # pred_alpha = pred_alpha.to(dtype=torch.uint8)
 
-        predictions = []
-        for pa, ds in zip(pred_alpha, data_samples):
-            # pa = self.restore_shape(pa, ds)
-            ori_h, ori_w = ds.ori_merged_shape[:2]
-            # print(ds.ori_merged_shape)
-            if self.resize_method == 'pad':
-                pa = pa[:, :ori_h, :ori_w]
-            elif self.resize_method == 'interp':
-                pa = F.interpolate(
-                    pa.unsqueeze(0),
-                    size=(ori_h, ori_w),
-                    mode=self.resize_mode)
-                pa = pa[0]
+    #     predictions = []
+    #     for pa, ds in zip(pred_alpha, data_samples):
+    #         # pa = self.restore_shape(pa, ds)
+    #         ori_h, ori_w = ds.ori_merged_shape[:2]
+    #         # print(ds.ori_merged_shape)
+    #         if self.resize_method == 'pad':
+    #             pa = pa[:, :ori_h, :ori_w]
+    #         elif self.resize_method == 'interp':
+    #             pa = F.interpolate(
+    #                 pa.unsqueeze(0),
+    #                 size=(ori_h, ori_w),
+    #                 mode=self.resize_mode)
+    #             pa = pa[0]
 
-            pa = pa[0]  # H,W
-            pa.clamp_(min=0, max=1)
-            ori_trimap = ds.ori_trimap
-            # trimap = torch.from_numpy(ds.ori_trimap).to(pa.device)
-            pa[ori_trimap == 255] = 1
-            pa[ori_trimap == 0] = 0
+    #         pa = pa[0]  # H,W
+    #         pa.clamp_(min=0, max=1)
+    #         ori_trimap = ds.ori_trimap
+    #         # trimap = torch.from_numpy(ds.ori_trimap).to(pa.device)
+    #         pa[ori_trimap == 255] = 1
+    #         pa[ori_trimap == 0] = 0
 
-            # pa = (trimap == 255) + (trimap == 128) * pa
+    #         # pa = (trimap == 255) + (trimap == 128) * pa
 
-            pa *= 255
-            pa.round_()
-            pa = pa.to(dtype=torch.uint8)
-            # pa = pa.cpu().numpy()
-            pa_sample = EditDataSample(pred_alpha=PixelData(data=pa))
-            # No PixelData as it will shift 2-dim to 3-dim
-            predictions.append(pa_sample)
-        # end = time.time()
-        # torch.cuda.synchronize()
+    #         pa *= 255
+    #         pa.round_()
+    #         pa = pa.to(dtype=torch.uint8)
+    #         # pa = pa.cpu().numpy()
+    #         pa_sample = EditDataSample(pred_alpha=PixelData(data=pa))
+    #         # No PixelData as it will shift 2-dim to 3-dim
+    #         predictions.append(pa_sample)
+    #     # end = time.time()
+    #     # torch.cuda.synchronize()
 
-        # print("time: ", end - middle, middle - start)
-        return predictions
+    #     # print("time: ", end - middle, middle - start)
+    #     return predictions
