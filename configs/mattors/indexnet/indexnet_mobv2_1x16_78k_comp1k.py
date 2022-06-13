@@ -4,14 +4,13 @@ _base_ = ['../comp1k.py', '../default_runtime.py']
 model = dict(
     type='IndexNet',
     data_preprocessor=dict(
-        type='ImageAndTrimapPreprocessor',
+        type='MattorPreprocessor',
         mean=[123.675, 116.28, 103.53],
         std=[58.395, 57.12, 57.375],
-        to_rgb=True,
-        trimap_proc='rescale_to_zero_one',
-        size_divisor=32,
-        resize_method='interp',
-        resize_mode='bicubic',
+        bgr_to_rgb=True,
+        proc_inputs='normalize',
+        proc_trimap='rescale_to_zero_one',
+        proc_gt='rescale_to_zero_one',
     ),
     backbone=dict(
         type='SimpleEncoderDecoder',
@@ -21,6 +20,11 @@ model = dict(
     loss_comp=dict(
         type='CharbonnierCompLoss', loss_weight=1.5, sample_wise=True),
     pretrained='open-mmlab://mmedit/mobilenet_v2',
+    test_cfg=dict(
+        resize_method='interp',
+        resize_mode='bicubic',
+        size_divisor=32,
+    ),
 )
 
 # dataset settings
@@ -159,6 +163,7 @@ param_scheduler = dict(
     type='MultiStepLR',
     milestones=[52000, 67600],
     gamma=0.1,
+    by_epoch=False,
 )
 # lr_config = dict(policy='Step', step=[52000, 67600], gamma=0.1, by_epoch=False)
 

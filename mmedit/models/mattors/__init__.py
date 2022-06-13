@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from .base_mattor import BaseMattor
-from .data_processor import ImageAndTrimapPreprocessor
+from .data_processor import MattorPreprocessor
 from .dim import DIM
 from .gca import GCA
 from .indexnet import IndexNet
@@ -10,7 +10,7 @@ from .plain_refiner import PlainRefiner
 
 __all__ = [
     'BaseMattor',
-    'ImageAndTrimapPreprocessor',
+    'MattorPreprocessor',
     'DIM',
     'PlainRefiner',
     'IndexNet',

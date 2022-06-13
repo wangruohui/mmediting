@@ -14,41 +14,8 @@ ForwardResults = Union[Dict[str, torch.Tensor], List[EditDataSample],
                        Tuple[torch.Tensor], torch.Tensor]
 
 
-def _pad(batch_image, ds_factor, mode='reflect'):
-    """Pad image size to a multiple of give downsampling factor."""
-
-    h, w = batch_image.shape[-2:]  # NCHW
-
-    new_h = ds_factor * ((h - 1) // ds_factor + 1)
-    new_w = ds_factor * ((w - 1) // ds_factor + 1)
-
-    pad_h = new_h - h
-    pad_w = new_w - w
-    pad = (pad_h, pad_w)
-    if new_h != h or new_w != w:
-        pad_width = (0, pad_w, 0, pad_h)  # torch.pad in reverse order
-        batch_image = F.pad(batch_image, pad_width, mode)
-
-    return batch_image, pad
-
-
-def _interpolate(batch_image, ds_factor, mode='bicubic'):
-    """Interpolate image size to a multiple of give downsampling factor."""
-
-    h, w = batch_image.shape[-2:]  # NCHW
-
-    new_h = h - (h % ds_factor)
-    new_w = w - (w % ds_factor)
-
-    size = (new_h, new_w)
-    if new_h != h or new_w != w:
-        batch_image = F.interpolate(batch_image, size=size, mode=mode)
-
-    return batch_image, size
-
-
 @MODELS.register_module()
-class ImageAndTrimapPreprocessor(BaseDataPreprocessor):
+class MattorPreprocessor(BaseDataPreprocessor):
     """Image and trimap pre-processor for trimap-based matting models.
 
     Accept the data sampled by the dataLoader, and preprocesses it into the
@@ -260,66 +227,3 @@ class ImageAndTrimapPreprocessor(BaseDataPreprocessor):
             data_sample.to(self.device) for data_sample in batch_data_samples
         ]
         return inputs, trimaps, batch_data_samples
-
-    # def postprocess(
-    #     self,
-    #     # inputs: torch.Tensor,  # N, 4, H, W, float32
-    #     pred_alpha: torch.Tensor,  # N, 1, H, W, float32
-    #     data_samples: List[EditDataSample],
-    # ) -> List[EditDataSample]:
-    #     """Post-processing for alpha predictions.
-
-    #     1. Restore padded shape
-    #     1. Mask with trimap
-    #     1. clamp to 0-1
-    #     1. to uint8
-    #     """
-
-    #     assert pred_alpha.ndim == 4  # N, 1, H, W, float32
-    #     assert len(pred_alpha) == len(data_samples) == 1
-    #     # pred_alpha = pred_alpha[:, 0, :, :]
-
-    #     # trimap = inputs[:, -1, :, :]
-
-    #     # pred_alpha.clamp_(min=0, max=1)
-    #     # pred_alpha[trimap == 1] = 1
-    #     # pred_alpha[trimap == 0] = 0
-    #     # pred_alpha *= 255
-    #     # pred_alpha.round_()
-    #     # pred_alpha = pred_alpha.to(dtype=torch.uint8)
-
-    #     predictions = []
-    #     for pa, ds in zip(pred_alpha, data_samples):
-    #         # pa = self.restore_shape(pa, ds)
-    #         ori_h, ori_w = ds.ori_merged_shape[:2]
-    #         # print(ds.ori_merged_shape)
-    #         if self.resize_method == 'pad':
-    #             pa = pa[:, :ori_h, :ori_w]
-    #         elif self.resize_method == 'interp':
-    #             pa = F.interpolate(
-    #                 pa.unsqueeze(0),
-    #                 size=(ori_h, ori_w),
-    #                 mode=self.resize_mode)
-    #             pa = pa[0]
-
-    #         pa = pa[0]  # H,W
-    #         pa.clamp_(min=0, max=1)
-    #         ori_trimap = ds.ori_trimap
-    #         # trimap = torch.from_numpy(ds.ori_trimap).to(pa.device)
-    #         pa[ori_trimap == 255] = 1
-    #         pa[ori_trimap == 0] = 0
-
-    #         # pa = (trimap == 255) + (trimap == 128) * pa
-
-    #         pa *= 255
-    #         pa.round_()
-    #         pa = pa.to(dtype=torch.uint8)
-    #         # pa = pa.cpu().numpy()
-    #         pa_sample = EditDataSample(pred_alpha=PixelData(data=pa))
-    #         # No PixelData as it will shift 2-dim to 3-dim
-    #         predictions.append(pa_sample)
-    #     # end = time.time()
-    #     # torch.cuda.synchronize()
-
-    #     # print("time: ", end - middle, middle - start)
-    #     return predictions

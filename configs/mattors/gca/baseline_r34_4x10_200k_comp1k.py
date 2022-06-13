@@ -4,15 +4,13 @@ _base_ = ['../comp1k.py', '../default_runtime.py']
 model = dict(
     type='GCA',
     data_preprocessor=dict(
-        type='ImageAndTrimapPreprocessor',
+        type='MattorPreprocessor',
         mean=[123.675, 116.28, 103.53],
         std=[58.395, 57.12, 57.375],
-        to_rgb=True,
-        trimap_proc='onehot',
-        inputs_only=True,
-        size_divisor=32,
-        resize_method='pad',
-        resize_mode='reflect',
+        bgr_to_rgb=True,
+        proc_inputs='normalize',
+        proc_trimap='rescale_to_zero_one',
+        proc_gt='rescale_to_zero_one',
     ),
     backbone=dict(
         type='SimpleEncoderDecoder',
@@ -29,7 +27,7 @@ model = dict(
             with_spectral_norm=True)),
     loss_alpha=dict(type='L1Loss'),
     pretrained='open-mmlab://mmedit/res34_en_nomixup',
-)
+    test_cfg=dict(resize_method='pad', resize_mode='reflect', size_divisor=32))
 
 # dataset settings
 dataset_type = 'AdobeComp1kDataset'
@@ -156,7 +154,7 @@ param_scheduler = [
         type='CosineAnnealingLR',
         T_max=200_000,  ## TODO, need more check
         eta_min=0,
-        begin=5000,
+        begin=0,
         end=200_000,
         by_epoch=False,  # 按迭代更新学习率
     )

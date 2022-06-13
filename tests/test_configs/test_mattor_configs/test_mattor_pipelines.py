@@ -7,7 +7,7 @@ from mmengine.dataset import Compose
 
 from mmedit.transforms import PackEditInputs
 from mmedit.utils import register_all_modules
-from mmedit.models.mattors import ImageAndTrimapPreprocessor
+from mmedit.models.mattors import MattorPreprocessor
 
 DATA_ROOT = Path(__file__).parent.parent.parent / 'data' / 'matting_dataset'
 BG_DIR = Path(
@@ -255,9 +255,9 @@ def test_mattor_pipelines():
 
         # 4. data_preprocessor
         if name.startswith('gca'):
-            preprocessor = ImageAndTrimapPreprocessor(proc_trimap='as_is')
+            preprocessor = MattorPreprocessor(proc_trimap='as_is')
         else:
-            preprocessor = ImageAndTrimapPreprocessor()
+            preprocessor = MattorPreprocessor()
         inputs, data_samples = preprocessor([result], is_training)
         print('inputs', *describe(inputs[:, :3, :, :]), sep='\t')
         print('trimap', *describe(inputs[:, 3:, :, :]), sep='\t')
