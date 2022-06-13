@@ -261,6 +261,7 @@ def test_mattor_pipelines():
         inputs, data_samples = preprocessor([result], is_training)
         print('inputs', *describe(inputs[:, :3, :, :]), sep='\t')
         print('trimap', *describe(inputs[:, 3:, :, :]), sep='\t')
+        print('trimap.uniques', inputs[:, 3:, :, :].unique())
         if inputs[:, 3:, :, :].size(1) == 3:
             assert (inputs[:, 3:, :, :].sum(dim=1).max().item() == 1)
         for k, v in data_samples[0].items():
@@ -269,6 +270,7 @@ def test_mattor_pipelines():
             print(k, *describe(v.data), sep='\t')
 
         print('\n')
+
 
 if __name__ == '__main__':
     test_mattor_pipelines()
