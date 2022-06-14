@@ -26,17 +26,18 @@ class DIM(BaseMattor):
             * ``(True, True)`` corresponds to the fine-tune stage in the paper.
 
     Args:
+        data_preprocessor (dict, optional): Config of data pre-processor.
         backbone (dict): Config of backbone.
         refiner (dict): Config of refiner.
+        pretrained (str): Path of pretrained model.
+        loss_alpha (dict): Config of the alpha prediction loss. Default: None.
+        loss_comp (dict): Config of the composition loss. Default: None.
+        loss_refine (dict): Config of the loss of the refiner. Default: None.
         train_cfg (dict): Config of training. In ``train_cfg``,
             ``train_backbone`` should be specified. If the model has a refiner,
             ``train_refiner`` should be specified.
         test_cfg (dict): Config of testing. In ``test_cfg``, If the model has a
             refiner, ``train_refiner`` should be specified.
-        pretrained (str): Path of pretrained model.
-        loss_alpha (dict): Config of the alpha prediction loss. Default: None.
-        loss_comp (dict): Config of the composition loss. Default: None.
-        loss_refine (dict): Config of the loss of the refiner. Default: None.
     """
 
     def __init__(self,
@@ -50,10 +51,10 @@ class DIM(BaseMattor):
                  loss_comp=None,
                  loss_refine=None):
         # Build data _preprocessor and backbone
+        # No init here, init at last
         super().__init__(
             backbone=backbone,
             data_preprocessor=data_preprocessor,
-            pretrained=pretrained,
             train_cfg=train_cfg,
             test_cfg=test_cfg)
 
@@ -76,6 +77,7 @@ class DIM(BaseMattor):
         if not self.train_cfg.train_backbone:
             self.freeze_backbone()
 
+        # Build losses
         if all(v is None for v in (loss_alpha, loss_comp, loss_refine)):
             raise ValueError('Please specify at least one loss for DIM.')
 
@@ -86,13 +88,20 @@ class DIM(BaseMattor):
         if loss_refine is not None:
             self.loss_refine = MODELS.build(loss_refine)
 
-        self.init_weights()
+        # Initialize pre-trained weights
+        self.init_weights(pretrained=pretrained)
 
     @property
     def with_refiner(self):
         """Whether the matting model has a refiner.
         """
         return hasattr(self, 'refiner') and self.refiner is not None
+
+    def train(self, mode=True):
+        """Mode switcher."""
+        super().train(mode)
+        if mode and (not self.train_cfg.train_backbone):
+            self.backbone.eval()
 
     def freeze_backbone(self):
         """Freeze the backbone and only train the refiner.
@@ -101,8 +110,9 @@ class DIM(BaseMattor):
         for param in self.backbone.parameters():
             param.requires_grad = False
 
-    def _forward(self, x: torch.Tensor,
-                 refine: bool) -> Tuple[torch.Tensor, torch.Tensor]:
+    def _forward(self,
+                 x: torch.Tensor,
+                 refine: bool = True) -> Tuple[torch.Tensor, torch.Tensor]:
         """Raw forward function.
 
         Args:
@@ -118,7 +128,7 @@ class DIM(BaseMattor):
         raw_alpha = self.backbone(x)
         pred_alpha = raw_alpha.sigmoid()
 
-        if refine:
+        if refine and hasattr(self, 'refiner'):
             refine_input = torch.cat((x[:, :3, :, :], pred_alpha), 1)
             pred_refine = self.refiner(refine_input, raw_alpha)
         else:
@@ -127,9 +137,9 @@ class DIM(BaseMattor):
             pred_refine = torch.zeros([])
         return pred_alpha, pred_refine
 
-    def _forward_test(self, inputs, data_samples):
+    def _forward_test(self, inputs):
         """Forward to get alpha prediction."""
-        pred_alpha, pred_refine = self._forward(inputs, self.test_cfg.refine)
+        pred_alpha, pred_refine = self._forward(inputs)
         if self.test_cfg.refine:
             return pred_refine
         else:
@@ -152,17 +162,18 @@ class DIM(BaseMattor):
         Returns:
             dict: Contains the loss items and batch information.
         """
-        trimap = inputs[:, 3:, :, :]
+        # merged, trimap, meta, alpha, ori_merged, fg, bg
         gt_alpha = torch.stack(tuple(ds.gt_alpha.data for ds in data_samples))
         gt_fg = torch.stack(tuple(ds.gt_fg.data for ds in data_samples))
         gt_bg = torch.stack(tuple(ds.gt_bg.data for ds in data_samples))
         gt_merged = torch.stack(
             tuple(ds.gt_merged.data for ds in data_samples))
 
-        # merged, trimap, meta, alpha, ori_merged, fg, bg
         pred_alpha, pred_refine = self._forward(inputs,
                                                 self.train_cfg.train_refiner)
 
+        trimap = inputs[:, 3:, :, :]
+        # Dim should use proc_trimap='rescale_to_zero_one'
         weight = get_unknown_tensor(trimap, unknown_value=128 / 255)
 
         losses = dict()
@@ -177,4 +188,3 @@ class DIM(BaseMattor):
             losses['loss_refine'] = self.loss_refine(pred_refine, gt_alpha,
                                                      weight)
         return losses
-        return {'losses': losses, 'num_samples': inputs.size(0)}

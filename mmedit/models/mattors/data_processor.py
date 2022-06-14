@@ -16,37 +16,30 @@ ForwardResults = Union[Dict[str, torch.Tensor], List[EditDataSample],
 
 @MODELS.register_module()
 class MattorPreprocessor(BaseDataPreprocessor):
-    """Image and trimap pre-processor for trimap-based matting models.
+    """DataPreprocessor for matting models.
 
-    Accept the data sampled by the dataLoader, and preprocesses it into the
-    format of the model input. ``ImgDataPreprocessor`` provides the
-    basic data pre-processing as follows
+    See base class ``BaseDataPreprocessor`` for detailed information.
+
+    Workflow as follow :
 
     - Collate and move data to the target device.
     - Convert inputs from bgr to rgb if the shape of input is (3, H, W).
     - Normalize image with defined std and mean.
-    - Pad inputs to the maximum size of current batch with defined
-      ``pad_value``. The padding size can be divisible by a defined
-      ``pad_size_divisor``
     - Stack inputs to batch_inputs.
-
-    For ``ImgDataPreprocessor``, the dimension of the single inputs must be
-    (3, H, W).
-
-    Note:
-        ``ImgDataPreprocessor`` and its subclass is built in the
-        constructor of :class:`BaseDataset`.
 
     Args:
         mean (Sequence[float or int]): The pixel mean of R, G, B channels.
             Defaults to (127.5, 127.5, 127.5).
         std (Sequence[float or int]): The pixel standard deviation of R, G, B
             channels. (127.5, 127.5, 127.5)
-        pad_size_divisor (int): The size of padded image should be
-            divisible by ``pad_size_divisor``. Defaults to 1.
-        pad_value (float or int): The padded pixel value. Defaults to 0.
         bgr_to_rgb (bool): whether to convert image from BGR to RGB.
             Defaults to False.
+        proc_inputs (str): Methods to process inputs.
+            Available options are ``normalize``.
+        proc_trimap (str): Methods to process gt tensors.
+            Available options are ``rescale_to_zero_one`` and ``as-is``.
+        proc_gt (str): Methods to process gt tensors.
+            Available options are ``rescale_to_zero_one`` and ``ignore``.
     """
 
     def __init__(self,
@@ -141,16 +134,15 @@ class MattorPreprocessor(BaseDataPreprocessor):
     def forward(self,
                 data: Sequence[dict],
                 training: bool = False) -> Tuple[torch.Tensor, list]:
-        """Perform normalization、padding and bgr2rgb conversion based on
-        ``BaseDataPreprocessor``.
+        """Pre-process input images, trimaps, ground-truth as configured.
 
         Args:
             data (Sequence[dict]): data sampled from dataloader.
             training (bool): Whether to enable training time augmentation.
 
         Returns:
-            Tuple[torch.Tensor, list]: Data in the same format as the model
-            input.
+            Tuple[torch.Tensor, list]:
+                Batched inputs and list of data samples.
         """
         if not training:
             # Image may of different size when testing
@@ -205,18 +197,7 @@ class MattorPreprocessor(BaseDataPreprocessor):
     def collate_data(self, data: Sequence[dict]) -> Tuple[list, list, list]:
         """Collating and moving data to the target device.
 
-        Take the data sampled from dataloader and unpack them into list of
-        tensor and list of labels. Then moving tensor to the target device.
-
-        Subclass could override it to be compatible with the custom format
-        data sampled from custom dataloader.
-
-        Args:
-            data (Sequence[dict]): data sampled from dataloader.
-
-        Returns:
-            Tuple[List[torch.Tensor], list]: Unstacked list of input tensor
-            and list of labels at target device.
+        See base class ``BaseDataPreprocessor`` for detailed information.
         """
         inputs = [data_['inputs'] for data_ in data]
         trimaps = [data_['data_sample'].trimap.data for data_ in data]
