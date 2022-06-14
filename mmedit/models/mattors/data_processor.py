@@ -3,7 +3,7 @@
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
-import torch.nn.functional as F
+# import torch.nn.functional as F
 from mmengine.model import BaseDataPreprocessor
 
 from mmedit.data_element import EditDataSample, PixelData
@@ -131,6 +131,8 @@ class MattorPreprocessor(BaseDataPreprocessor):
                 if ispixeldata:
                     value = PixelData(data=value)
                 setattr(ds, key, value)
+        elif self.proc_gt == 'ignore':
+            pass
         else:
             raise ValueError(f'proc_gt = {self.proc_gt} is not supported.')
 
@@ -152,8 +154,8 @@ class MattorPreprocessor(BaseDataPreprocessor):
         """
         if not training:
             # Image may of different size when testing
-            assert len(data) == 1, ("only batch_size=1 "
-                                    "is supported for testing.")
+            assert len(data) == 1, ('only batch_size=1 '
+                                    'is supported for testing.')
 
         images, trimaps, batch_data_samples = self.collate_data(data)
 
@@ -169,14 +171,14 @@ class MattorPreprocessor(BaseDataPreprocessor):
             self._proc_gt(batch_data_samples, 'gt_alpha')
 
         # if not training:
-        #     # Pad the images to align with network downsample factor for testing
+        #     # Pad the images to align with network downsample factor for testing  # noqa
         #     if self.resize_method == 'pad':
         #         batch_images, _ = _pad(batch_images, self.size_divisor,
         #                                self.resize_mode)
         #         batch_trimaps, _ = _pad(batch_trimaps, self.size_divisor,
         #                                 self.resize_mode)
         #     elif self.resize_method == 'interp':
-        #         batch_images, _ = _interpolate(batch_images, self.size_divisor,
+        #         batch_images, _ = _interpolate(batch_images, self.size_divisor,  # noqa
         #                                        self.resize_mode)
         #         batch_trimaps, _ = _interpolate(batch_trimaps,
         #                                         self.size_divisor, 'nearest')

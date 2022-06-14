@@ -2,7 +2,6 @@
 import argparse
 import os
 import os.path as osp
-from mmengine.logging import MMLogger
 
 from mmengine.config import Config, DictAction
 from mmengine.logging import MMLogger
@@ -69,7 +68,8 @@ def main():
         cfg.model.pretrained = None
 
     # Create mmedit logger
-    MMLogger.get_instance(name='mmedit', logger_name='mmedit')
+    logger = MMLogger.get_instance(name='mmedit', logger_name='mmedit')
+    logger.info(f'Configs:\n{cfg.pretty_text}')
 
     # build the runner from config
     runner = Runner.from_cfg(cfg)

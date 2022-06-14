@@ -61,7 +61,7 @@ def main():
 
     # Create mmedit logger
     logger = MMLogger.get_instance(name='mmedit', logger_name='mmedit')
-    logger.info(f"Configs:\n{cfg.pretty_text}")
+    logger.info(f'Configs:\n{cfg.pretty_text}')
 
     # build the runner from config
     runner = Runner.from_cfg(cfg)
@@ -69,7 +69,7 @@ def main():
     # start training
     runner.train()
 
-    logger.info(f"Results saved under {cfg.work_dir}")
+    logger.info(f'Results saved under {cfg.work_dir}')
 
 
 if __name__ == '__main__':

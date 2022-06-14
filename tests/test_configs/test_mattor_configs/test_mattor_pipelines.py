@@ -1,13 +1,14 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from pathlib import Path
-from pprint import pprint
+from pprint import pprint  # noqa
 
 import numpy as np
 import torch
 from mmengine.dataset import Compose
 
+from mmedit.models.mattors import MattorPreprocessor
 from mmedit.transforms import PackEditInputs
 from mmedit.utils import register_all_modules
-from mmedit.models.mattors import MattorPreprocessor
 
 DATA_ROOT = Path(__file__).parent.parent.parent / 'data' / 'matting_dataset'
 BG_DIR = Path(
@@ -62,7 +63,7 @@ dim_test_pipeline = [
     #     type='Collect',
     #     keys=['merged', 'trimap'],
     #     meta_keys=[
-    #         'merged_path', 'pad', 'merged_ori_shape', 'ori_alpha', 'ori_trimap'
+    #         'merged_path', 'pad', 'merged_ori_shape', 'ori_alpha', 'ori_trimap'   # noqa
     #     ]),
     # dict(type='ImageToTensor', keys=['merged', 'trimap']),
     dict(type='PackEditInputs'),
@@ -192,7 +193,7 @@ gca_test_pipeline = [
     #     type='Collect',
     #     keys=['merged', 'trimap'],
     #     meta_keys=[
-    #         'merged_path', 'pad', 'merged_ori_shape', 'ori_alpha', 'ori_trimap'
+    #         'merged_path', 'pad', 'merged_ori_shape', 'ori_alpha', 'ori_trimap'      # noqa
     #     ]),
     # dict(type='ImageToTensor', keys=['merged', 'trimap']),
     dict(type='FormatTrimap', to_onehot=True),

@@ -1,13 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Tuple
+
 import torch
+from mmengine.logging import MMLogger
 
 from mmedit.registry import MODELS
 from .base_mattor import BaseMattor
 from .utils import get_unknown_tensor
-from mmedit.data_element import EditDataSample, PixelData
-
-from mmengine.logging import MMLogger
 
 
 @MODELS.register_module()
@@ -143,12 +142,12 @@ class DIM(BaseMattor):
             inputs (torch.Tensor): Concatenation of normalized image and trimap
                 shape (N, 4, H, W)
             data_samples (list[EditDataSample]): Data samples containing:
-                - alpha (Tensor): of shape (N, 1, H, W). Tensor of alpha read by
-                    opencv.
-                - ori_merged (Tensor): of shape (N, C, H, W). Tensor of origin merged
-                    image read by opencv (not normalized).
-                - fg (Tensor): of shape (N, C, H, W). Tensor of fg read by opencv.
-                - bg (Tensor): of shape (N, C, H, W). Tensor of bg read by opencv.
+                - gt_alpha (Tensor): Ground-truth of alpha
+                    shape (N, 1, H, W), normalized to 0 to 1.
+                - gt_fg (Tensor): Ground-truth of foreground
+                    shape (N, C, H, W), normalized to 0 to 1.
+                - gt_bg (Tensor): Ground-truth of background
+                    shape (N, C, H, W), normalized to 0 to 1.
 
         Returns:
             dict: Contains the loss items and batch information.

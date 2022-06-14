@@ -1,22 +1,21 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import logging
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 from typing import Dict, List, Optional, Tuple, Union
 
-import mmcv
-import numpy as np
+# import mmcv
 import torch
 import torch.nn.functional as F
 from mmcv import ConfigDict
+from mmengine.config import Config
 from mmengine.logging import MMLogger
 from mmengine.model import BaseModel
-from mmengine.config import Config
-from mmengine.model import ImgDataPreprocessor, BaseDataPreprocessor
+
 from mmedit.data_element import EditDataSample, PixelData
 # from mmedit.core.evaluation import connectivity, gradient_error, mse, sad
 # from ..base import BaseModel
 # from ..builder import build_backbone, build_component
 from mmedit.registry import MODELS
+
 # from mmengine.utils import stack_batch
 # 2022-02-20 22:26:38,860 - mmdet - INFO - this is a test
 
@@ -125,7 +124,8 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
         #     self.refiner.init_weights()
 
     def resize_inputs(self, batch_inputs):
-        """Pad or interpolate images and trimaps to multiple of given factor."""
+        """Pad or interpolate images and trimaps to multiple of given factor.
+        """
 
         resize_method = self.test_cfg['resize_method']
         resize_mode = self.test_cfg['resize_mode']
@@ -176,6 +176,7 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
 
         return pred_alpha
 
+    """
         pred_alpha = pred_alpha.squeeze()
         # print(pred_alpha.sum(), pred_alpha.max(), pred_alpha.min())
         ori_trimap = data_sample.ori_trimap.squeeze()
@@ -207,6 +208,7 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
         # print(pred_alpha)
         # print(pred_alpha.dtype)
         return pred_alpha
+    """
 
     def postprocess(
         self,
