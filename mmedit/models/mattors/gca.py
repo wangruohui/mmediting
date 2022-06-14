@@ -94,7 +94,11 @@ class GCA(BaseMattor):
         gt_alpha = torch.stack(tuple(ds.gt_alpha.data for ds in data_samples))
         pred_alpha = self._forward(inputs, data_samples)
 
-        weight = get_unknown_tensor(trimap, unknown_value=128 / 255)
+        # FormatTrimap(to_onehot=False) will change unknown_value to 1
+        # FormatTrimap(to_onehot=True) will shift to 3 dim,
+        # get_unknown_tensor can handle that directly without knowing
+        # unknown_value.
+        weight = get_unknown_tensor(trimap, unknown_value=1)
 
         losses = {'loss': self.loss_alpha(pred_alpha, gt_alpha, weight)}
         return losses
