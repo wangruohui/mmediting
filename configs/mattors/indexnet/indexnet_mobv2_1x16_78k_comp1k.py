@@ -28,10 +28,7 @@ model = dict(
 )
 
 # dataset settings
-dataset_type = 'AdobeComp1kDataset'
 data_root = 'data/adobe_composition-1k'
-# img_norm_cfg = dict(
-#     mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225], to_rgb=True)
 train_pipeline = [
     dict(type='LoadImageFromFile', key='alpha', color_type='grayscale'),
     dict(type='LoadImageFromFile', key='fg'),
@@ -57,19 +54,9 @@ train_pipeline = [
         keep_ratio=False,
         interpolation='bicubic'),
     dict(type='Flip', keys=['alpha', 'merged', 'fg', 'bg', 'trimap']),
-    # dict(
-    #     type='RescaleToZeroOne',
-    #     keys=['merged', 'alpha', 'ori_merged', 'fg', 'bg', 'trimap']),
-    # dict(type='Normalize', keys=['merged'], **img_norm_cfg),
-    # dict(
-    #     type='Collect',
-    #     keys=['merged', 'alpha', 'trimap', 'ori_merged', 'fg', 'bg'],
-    #     meta_keys=[]),
-    # dict(
-    #     type='ImageToTensor',
-    #     keys=['merged', 'alpha', 'trimap', 'ori_merged', 'fg', 'bg']),
     dict(type='PackEditInputs'),
 ]
+
 test_pipeline = [
     dict(
         type='LoadImageFromFile',
@@ -133,7 +120,6 @@ train_dataloader = dict(
 
 val_dataloader = dict(
     batch_size=1,
-    num_workers=8,
     dataset=dict(pipeline=test_pipeline),
 )
 
@@ -141,7 +127,7 @@ test_dataloader = val_dataloader
 
 train_cfg = dict(
     type='IterBasedTrainLoop',
-    max_iters=78_000,
+    max_iters=78000,
     val_interval=2600,
 )
 val_cfg = dict(type='ValLoop')
@@ -165,26 +151,9 @@ param_scheduler = dict(
     gamma=0.1,
     by_epoch=False,
 )
-# lr_config = dict(policy='Step', step=[52000, 67600], gamma=0.1, by_epoch=False)
 
-# # checkpoint saving
-# checkpoint_config = dict(interval=2600, by_epoch=False)
-# evaluation = dict(interval=2600, save_image=False)
-# log_config = dict(
-#     interval=10,
-#     hooks=[
-#         dict(type='TextLoggerHook', by_epoch=False),
-#         # dict(type='TensorboardLoggerHook'),
-#         # dict(type='PaviLoggerHook', init_kwargs=dict(project='indexnet'))
-#     ])
-
+# checkpoint saving
 default_hooks = dict(checkpoint=dict(interval=2600))
 
-# # runtime settings
-# total_iters = 78000
-# dist_params = dict(backend='nccl')
-# log_level = 'INFO'
-# work_dir = './work_dirs/indexnet'
-# load_from = None
-# resume_from = None
-# workflow = [('train', 1)]
+# runtime settings
+# inheritate from _base_

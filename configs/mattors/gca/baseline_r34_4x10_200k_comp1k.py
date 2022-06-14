@@ -9,7 +9,7 @@ model = dict(
         std=[58.395, 57.12, 57.375],
         bgr_to_rgb=True,
         proc_inputs='normalize',
-        proc_trimap='rescale_to_zero_one',
+        proc_trimap='as_is',  # proc by pipeline FormatTrimap
         proc_gt='rescale_to_zero_one',
     ),
     backbone=dict(
@@ -25,12 +25,15 @@ model = dict(
             block='BasicBlockDec',
             layers=[2, 3, 3, 2],
             with_spectral_norm=True)),
-    loss_alpha=dict(type='L1Loss'),
     pretrained='open-mmlab://mmedit/res34_en_nomixup',
-    test_cfg=dict(resize_method='pad', resize_mode='reflect', size_divisor=32))
+    loss_alpha=dict(type='L1Loss'),
+    test_cfg=dict(
+        resize_method='pad',
+        resize_mode='reflect',
+        size_divisor=32,
+    ))
 
 # dataset settings
-dataset_type = 'AdobeComp1kDataset'
 data_root = 'data/adobe_composition-1k'
 bg_dir = 'data/coco/train2017'
 # img_norm_cfg = dict(
@@ -64,7 +67,7 @@ train_pipeline = [
     # dict(type='Normalize', keys=['merged'], **img_norm_cfg),
     # dict(type='Collect', keys=['merged', 'alpha', 'trimap'], meta_keys=[]),
     # dict(type='ImageToTensor', keys=['merged', 'alpha', 'trimap']),
-    # dict(type='FormatTrimap', to_onehot=True),
+    dict(type='FormatTrimap', to_onehot=True),
     dict(type='PackEditInputs'),
 ]
 test_pipeline = [
@@ -89,7 +92,7 @@ test_pipeline = [
     #         'merged_path', 'pad', 'merged_ori_shape', 'ori_alpha', 'ori_trimap'
     #     ]),
     # dict(type='ImageToTensor', keys=['merged', 'trimap']),
-    # dict(type='FormatTrimap', to_onehot=True),
+    dict(type='FormatTrimap', to_onehot=True),
     dict(type='PackEditInputs'),
 ]
 # data = dict(
@@ -114,16 +117,16 @@ test_pipeline = [
 #         pipeline=test_pipeline))
 
 train_dataloader = dict(
-    # batch_size=10,
-    # num_workers=8,
-    batch_size=4,
-    num_workers=1,
+    batch_size=10,
+    num_workers=8,
+    # batch_size=4,
+    # num_workers=1,
     dataset=dict(pipeline=train_pipeline),
 )
 
 val_dataloader = dict(
     batch_size=1,
-    num_workers=1,
+    # num_workers=1,
     # num_workers=8,
     dataset=dict(pipeline=test_pipeline),
 )
@@ -168,6 +171,7 @@ param_scheduler = [
 #     warmup_ratio=0.001)
 
 # checkpoint saving
+# inheritate from default_runtime.py
 # checkpoint_config = dict(interval=2000, by_epoch=False)
 # evaluation = dict(interval=2000, save_image=False, gpu_collect=False)
 # log_config = dict(
@@ -178,7 +182,8 @@ param_scheduler = [
 #         # dict(type='PaviLoggerHook', init_kwargs=dict(project='gca'))
 #     ])
 
-# # runtime settings
+# runtime settings
+# inheritate from default_runtime.py
 # total_iters = 200000
 # dist_params = dict(backend='nccl')
 # log_level = 'INFO'

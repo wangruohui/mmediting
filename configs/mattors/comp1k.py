@@ -2,9 +2,9 @@
 
 # dataset settings
 dataset_type = 'AdobeComp1kDataset'
-data_root = 's3://openmmlab/datasets/editing/adobe_composition-1k'
+# data_root = 's3://openmmlab/datasets/editing/adobe_composition-1k'
 # cluster=openmmlab in ~/petreloss.conf
-# data_root = 'data/adobe_composition-1k'
+data_root = 'data/adobe_composition-1k'
 # data = dict(
 #     samples_per_gpu=1,
 #     workers_per_gpu=4,
