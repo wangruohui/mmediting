@@ -124,6 +124,7 @@ class DIM(BaseMattor):
 
     def _forward(self,
                  x: torch.Tensor,
+                 *,
                  refine: bool = True) -> Tuple[torch.Tensor, torch.Tensor]:
         """Raw forward function.
 

@@ -46,7 +46,7 @@ class GCA(BaseMattor):
         # self.fp16_enabled = False
 
     # @auto_fp16(apply_to=('x', ))
-    def _forward(self, inputs, data_samples):
+    def _forward(self, inputs):
         # trimap = x[:, -1, :, :]
         # trimap *= 2
         # trimap[trimap == 256 / 255] = 1
@@ -71,8 +71,8 @@ class GCA(BaseMattor):
         pred_alpha = (raw_alpha.tanh() + 1.0) / 2.0
         return pred_alpha
 
-    def _forward_test(self, inputs, data_samples):
-        return self._forward(inputs, data_samples)
+    def _forward_test(self, inputs ):
+        return self._forward(inputs)
 
     # def forward_dummy(self, inputs):
     #     return self._forward(inputs)
