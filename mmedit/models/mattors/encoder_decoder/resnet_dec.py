@@ -4,7 +4,7 @@ from mmcv.cnn import ConvModule, constant_init
 
 from mmedit.models.common import GCAModule
 from mmedit.registry import COMPONENTS
-from ..encoders.resnet_enc import BasicBlock
+from .resnet_enc import BasicBlock
 
 
 class BasicBlockDec(BasicBlock):

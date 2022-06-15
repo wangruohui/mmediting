@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .encoder_decoders import VGG16, PlainDecoder, SimpleEncoderDecoder
 
 # from .encoder_decoders import (VGG16, ContextualAttentionNeck, DeepFillDecoder,
 #                                DeepFillEncoder, DeepFillEncoderDecoder,
@@ -21,9 +20,9 @@ from .encoder_decoders import VGG16, PlainDecoder, SimpleEncoderDecoder
 
 __all__ = [
     # matting
-    'VGG16',
-    'PlainDecoder',
-    'SimpleEncoderDecoder',
+    # 'VGG16',
+    # 'PlainDecoder',
+    # 'SimpleEncoderDecoder',
     # 'MSRResNet',
     # 'GLEncoderDecoder', 'GLEncoder', 'GLDecoder', 'GLDilationNeck',
     # 'PConvEncoderDecoder', 'PConvEncoder', 'PConvDecoder', 'ResNetEnc',

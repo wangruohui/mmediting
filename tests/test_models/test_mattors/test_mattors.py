@@ -7,7 +7,12 @@ import numpy as np
 import pytest
 import torch
 
-from mmedit.models import BaseMattor, build_model
+from mmedit.models import BaseMattor
+from mmedit.registry import MODELS
+
+
+def build_model(model_cfg, train_cfg=None, test_cfg=None):
+    return MODELS.build(model_cfg + train_cfg + test_cfg)
 
 
 def _get_model_cfg(fname):
@@ -37,33 +42,7 @@ def test_base_mattor():
         decoder=dict(type='PlainDecoder'))
     refiner = dict(type='PlainRefiner')
     train_cfg = mmcv.ConfigDict(train_backbone=True, train_refiner=True)
-    test_cfg = mmcv.ConfigDict(
-        refine=True, metrics=['SAD', 'MattingMSE', 'GRAD', 'CONN'])
-
-    with pytest.raises(KeyError):
-        # metrics should be specified in test_cfg
-        BaseMattor(
-            backbone,
-            refiner,
-            train_cfg.copy(),
-            test_cfg=mmcv.ConfigDict(refine=True))
-
-    with pytest.raises(KeyError):
-        # supported metric should be one of {'SAD', 'MattingMSE'}
-        BaseMattor(
-            backbone,
-            refiner,
-            train_cfg.copy(),
-            test_cfg=mmcv.ConfigDict(
-                refine=True, metrics=['UnsupportedMetric']))
-
-    with pytest.raises(TypeError):
-        # metrics must be None or a list of str
-        BaseMattor(
-            backbone,
-            refiner,
-            train_cfg.copy(),
-            test_cfg=mmcv.ConfigDict(refine=True, metrics='SAD'))
+    test_cfg = mmcv.ConfigDict(refine=True)
 
     # build mattor without refiner
     mattor = BaseMattor(

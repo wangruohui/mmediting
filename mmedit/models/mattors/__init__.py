@@ -5,8 +5,7 @@ from .dim import DIM
 from .gca import GCA
 from .indexnet import IndexNet
 from .plain_refiner import PlainRefiner
-
-# from .utils import get_unknown_tensor
+from .encoder_decoder import *
 
 __all__ = [
     'BaseMattor',
@@ -15,5 +14,4 @@ __all__ = [
     'PlainRefiner',
     'IndexNet',
     'GCA',
-    'get_unknown_tensor',
 ]

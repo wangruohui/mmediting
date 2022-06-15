@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .decoders import PlainDecoder
-from .encoders import VGG16
+# from .decoders import PlainDecoder
+# from .encoders import VGG16
 # from .aot_encoder_decoder import AOTEncoderDecoder
 # from .decoders import (DeepFillDecoder, FBADecoder, GLDecoder,
 # IndexedUpsample,
@@ -14,15 +14,15 @@ from .encoders import VGG16
 # from .gl_encoder_decoder import GLEncoderDecoder
 # from .necks import ContextualAttentionNeck, GLDilationNeck
 # from .pconv_encoder_decoder import PConvEncoderDecoder
-from .simple_encoder_decoder import SimpleEncoderDecoder
+# from .simple_encoder_decoder import SimpleEncoderDecoder
 
 # from .two_stage_encoder_decoder import DeepFillEncoderDecoder
 
-__all__ = [
-    'SimpleEncoderDecoder',
-    'VGG16',
-    'PlainDecoder',
-]
+# __all__ = [
+#     'SimpleEncoderDecoder',
+#     'VGG16',
+#     'PlainDecoder',
+# ]
 
 # __all__ = [
 #     'GLEncoderDecoder', 'SimpleEncoderDecoder', 'VGG16', 'GLEncoder',

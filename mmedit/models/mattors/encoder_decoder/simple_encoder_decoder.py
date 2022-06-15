@@ -1,8 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch.nn as nn
 
-# from mmedit.models.builder import build_component
-from ....registry import MODELS
+from mmedit.registry import MODELS
 
 
 @MODELS.register_module()
