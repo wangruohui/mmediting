@@ -185,7 +185,7 @@ class DIM(BaseMattor):
             tuple(ds.gt_merged.data for ds in data_samples))
 
         pred_alpha, pred_refine = self._forward(inputs,
-                                                self.train_cfg.train_refiner)
+                                                refine=  self.train_cfg.train_refiner)
 
         trimap = inputs[:, 3:, :, :]
         # Dim should use proc_trimap='rescale_to_zero_one'

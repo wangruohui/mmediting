@@ -220,8 +220,7 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
     def forward(self,
                 batch_inputs: torch.Tensor,
                 data_samples: DataSamples = None,
-                mode: str = 'feat',
-                **kwargs) -> List[EditDataSample]:
+                mode: str = 'feat') -> List[EditDataSample]:
         """General forward function.
 
         Args:
@@ -247,12 +246,12 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
                 Sequence of predictions packed into EditDataElement
         """
         if mode == 'tensor':
-            raw = self._forward(batch_inputs, **kwargs)
+            raw = self._forward(batch_inputs)
             return raw
         elif mode == 'predict':
             # Pre-process runs in runner
             batch_inputs = self.resize_inputs(batch_inputs)
-            batch_pred_alpha = self._forward_test(batch_inputs, **kwargs)
+            batch_pred_alpha = self._forward_test(batch_inputs)
             predictions = self.postprocess(batch_pred_alpha, data_samples)
             return predictions
         elif mode == 'loss':

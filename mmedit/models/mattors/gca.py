@@ -93,7 +93,7 @@ class GCA(BaseMattor):
         """
         trimap = inputs[:, 3:, :, :]
         gt_alpha = torch.stack(tuple(ds.gt_alpha.data for ds in data_samples))
-        pred_alpha = self._forward(inputs, data_samples)
+        pred_alpha = self._forward(inputs)
 
         # FormatTrimap(to_onehot=False) will change unknown_value to 1
         # FormatTrimap(to_onehot=True) will shift to 3 dim,
