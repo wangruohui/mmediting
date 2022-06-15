@@ -55,6 +55,7 @@ class DIM(BaseMattor):
         super().__init__(
             backbone=backbone,
             data_preprocessor=data_preprocessor,
+            pretrained=pretrained,
             train_cfg=train_cfg,
             test_cfg=test_cfg)
 

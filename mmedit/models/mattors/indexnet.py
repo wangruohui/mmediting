@@ -52,12 +52,12 @@ class IndexNet(BaseMattor):
     # def forward_dummy(self, inputs):
     #     return self.backbone(inputs)
 
-    def _forward(self, inputs, data_samples):
+    def _forward(self, inputs):
         pred_alpha = self.backbone(inputs)
         return pred_alpha
 
-    def _forward_test(self, inputs, data_samples):
-        return self._forward(inputs, data_samples)
+    def _forward_test(self, inputs):
+        return self._forward(inputs)
 
     # @auto_fp16(apply_to=('merged', 'trimap'))
     def _forward_train(self, inputs, data_samples):
@@ -77,6 +77,12 @@ class IndexNet(BaseMattor):
         Returns:
             dict: Contains the loss items and batch information.
         """
+        # for k, v in self.named_parameters():
+        #     vnan = v.isnan().any()
+        #     if vnan:
+        #         print(k, vnan)
+        #         exit()
+
         trimap = inputs[:, 3:, :, :]
         gt_alpha = torch.stack(tuple(ds.gt_alpha.data for ds in data_samples))
         gt_fg = torch.stack(tuple(ds.gt_fg.data for ds in data_samples))
@@ -86,9 +92,23 @@ class IndexNet(BaseMattor):
 
         pred_alpha = self.backbone(inputs)
 
+        # if (torch.isnan(inputs).any() or torch.isnan(trimap).any()
+        #         or torch.isnan(inputs[:, :3, :, :]).any()
+        #         or torch.isnan(pred_alpha).any()):
+        #     print("inputs", torch.isnan(inputs).any())
+        #     print("trimap", torch.isnan(trimap).any())
+        #     print("merged", torch.isnan(inputs[:, :3, :, :]).any())
+        #     print("pred_alpha", torch.isnan(pred_alpha).any())
+        #     print(losses)
+        #     exit()
         weight = get_unknown_tensor(trimap, unknown_value=128 / 255)
 
         losses = dict()
+        # print("gt_alpha", torch.isnan(gt_alpha).any())
+        # print("weight", torch.isnan(weight).any())
+        # print("gt_fg", torch.isnan(gt_fg).any())
+        # print("gt_bg", torch.isnan(gt_bg).any())
+        # print("gt_merged", torch.isnan(gt_merged).any())
 
         if self.loss_alpha is not None:
             losses['loss_alpha'] = self.loss_alpha(pred_alpha, gt_alpha,
@@ -96,5 +116,6 @@ class IndexNet(BaseMattor):
         if self.loss_comp is not None:
             losses['loss_comp'] = self.loss_comp(pred_alpha, gt_fg, gt_bg,
                                                  gt_merged, weight)
+
         return losses
         # return {'losses': losses, 'num_samples': merged.size(0)}
