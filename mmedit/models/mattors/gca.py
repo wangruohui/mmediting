@@ -40,6 +40,7 @@ class GCA(BaseMattor):
             pretrained=pretrained,
             train_cfg=train_cfg,
             test_cfg=test_cfg)
+
         self.loss_alpha = MODELS.build(loss_alpha)
         # support fp16
         # self.fp16_enabled = False

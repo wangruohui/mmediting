@@ -81,14 +81,12 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
         pretrained (str): Path of pretrained model.
     """
 
-    def __init__(
-        self,
-        data_preprocessor: Union[dict, Config],
-        backbone: dict,
-        train_cfg: Optional[dict] = None,
-        test_cfg: Optional[dict] = None,
-        pretrained=None,
-    ):
+    def __init__(self,
+                 data_preprocessor: Union[dict, Config],
+                 backbone: dict,
+                 train_cfg: Optional[dict] = None,
+                 test_cfg: Optional[dict] = None,
+                 pretrained=None):
         # Initialize nn.Module
         # Build data processor
         super().__init__(data_preprocessor=data_preprocessor)
@@ -111,7 +109,7 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
         if pretrained is not None:
             logger = MMLogger.get_instance(name='mmedit')
             logger.warn(f'Loading model from: {pretrained} ...')
-            self.backbone.init_weights(pretrained)
+        self.backbone.init_weights(pretrained)
 
     def resize_inputs(self, batch_inputs):
         """Pad or interpolate images and trimaps to multiple of given factor.
@@ -248,7 +246,6 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
             List[EditDataElement]:
                 Sequence of predictions packed into EditDataElement
         """
-
         if mode == 'tensor':
             raw = self._forward(batch_inputs, **kwargs)
             return raw

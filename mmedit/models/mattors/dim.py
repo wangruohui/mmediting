@@ -91,6 +91,17 @@ class DIM(BaseMattor):
         # Initialize pre-trained weights
         self.init_weights(pretrained=pretrained)
 
+    def init_weights(self, pretrained=None):
+        """Initialize the model network weights.
+
+        Args:
+            pretrained (str, optional): Path to the pretrained weight.
+                Defaults to None.
+        """
+        super().init_weights(pretrained=pretrained)
+        if self.with_refiner:
+            self.refiner.init_weights()
+
     @property
     def with_refiner(self):
         """Whether the matting model has a refiner.
@@ -125,8 +136,10 @@ class DIM(BaseMattor):
             torch.Tensor: pred_refine, with shape (N, 4, H, W)
         """
 
+        # print(len(x.unique()))
         raw_alpha = self.backbone(x)
         pred_alpha = raw_alpha.sigmoid()
+        # print(pred_alpha.unique())
 
         if refine and hasattr(self, 'refiner'):
             refine_input = torch.cat((x[:, :3, :, :], pred_alpha), 1)
