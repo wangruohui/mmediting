@@ -51,7 +51,7 @@ test_dataloader = val_dataloader
 
 val_evaluator = [
     dict(type='SAD'),
-    dict(type='MSE'),
+    dict(type='MattingMSE'),
     dict(type='GradientError'),
     dict(type='ConnectivityError'),
 ]
