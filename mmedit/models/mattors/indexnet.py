@@ -24,16 +24,14 @@ class IndexNet(BaseMattor):
         loss_comp (dict): Config of the composition loss. Default: None.
     """
 
-    def __init__(
-        self,
-        data_preprocessor,
-        backbone,
-        loss_alpha=None,
-        loss_comp=None,
-        train_cfg=None,
-        test_cfg=None,
-        pretrained=None,
-    ):
+    def __init__(self,
+                 data_preprocessor,
+                 backbone,
+                 loss_alpha=None,
+                 loss_comp=None,
+                 train_cfg=None,
+                 test_cfg=None,
+                 pretrained=None):
         super().__init__(
             backbone=backbone,
             data_preprocessor=data_preprocessor,

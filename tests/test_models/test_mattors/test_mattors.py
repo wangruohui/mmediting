@@ -4,15 +4,10 @@ from unittest.mock import patch
 
 import mmcv
 import numpy as np
-import pytest
 import torch
 
 from mmedit.models import BaseMattor
 from mmedit.registry import MODELS
-
-
-def build_model(model_cfg, train_cfg=None, test_cfg=None):
-    return MODELS.build(model_cfg + train_cfg + test_cfg)
 
 
 def _get_model_cfg(fname):
@@ -41,8 +36,8 @@ def test_base_mattor():
         encoder=dict(type='VGG16', in_channels=4),
         decoder=dict(type='PlainDecoder'))
     refiner = dict(type='PlainRefiner')
-    train_cfg = mmcv.ConfigDict(train_backbone=True, train_refiner=True)
-    test_cfg = mmcv.ConfigDict(refine=True)
+    train_cfg = dict(train_backbone=True, train_refiner=True)
+    test_cfg = dict(refine=True)
 
     # build mattor without refiner
     mattor = BaseMattor(
@@ -77,11 +72,11 @@ def test_dim():
     model_cfg['pretrained'] = None
 
     # 1. test dim model with refiner
-    train_cfg.train_refiner = True
-    test_cfg.refine = True
+    model_cfg.train_cfg.train_refiner = True
+    model_cfg.test_cfg.refine = True
 
     # test model forward in train mode
-    model = build_model(model_cfg, train_cfg=train_cfg, test_cfg=test_cfg)
+    model = MODELS.build(model_cfg)
     input_train = _demo_input_train((64, 64))
     output_train = model(**input_train)
     assert output_train['num_samples'] == 1
@@ -90,7 +85,7 @@ def test_dim():
 
     # test model forward in train mode with gpu
     if torch.cuda.is_available():
-        model = build_model(model_cfg, train_cfg=train_cfg, test_cfg=test_cfg)
+        model = MODELS.build(model_cfg)
         model.cuda()
         input_train = _demo_input_train((64, 64), cuda=True)
         output_train = model(**input_train)

@@ -5,7 +5,7 @@ from mmcv.cnn import ConvModule, build_activation_layer, constant_init
 from mmcv.runner import load_checkpoint
 
 from mmedit.models.common import GCAModule
-from mmedit.registry import COMPONENTS
+from mmedit.registry import MODELS
 from mmedit.utils.logger import get_root_logger
 
 
@@ -96,7 +96,7 @@ class BasicBlock(nn.Module):
         return out
 
 
-@COMPONENTS.register_module()
+@MODELS.register_module()
 class ResNetEnc(nn.Module):
     """ResNet encoder for image matting.
 
@@ -267,7 +267,7 @@ class ResNetEnc(nn.Module):
         return x
 
 
-@COMPONENTS.register_module()
+@MODELS.register_module()
 class ResShortcutEnc(ResNetEnc):
     """ResNet backbone for image matting with shortcut connection.
 
@@ -388,7 +388,7 @@ class ResShortcutEnc(ResNetEnc):
         }
 
 
-@COMPONENTS.register_module()
+@MODELS.register_module()
 class ResGCAEncoder(ResShortcutEnc):
     """ResNet backbone with shortcut connection and gca module.
 

@@ -3,7 +3,7 @@ import torch.nn as nn
 from mmcv.cnn import ConvModule, constant_init
 
 from mmedit.models.common import GCAModule
-from mmedit.registry import COMPONENTS
+from mmedit.registry import MODELS
 from .resnet_enc import BasicBlock
 
 
@@ -80,7 +80,7 @@ class BasicBlockDec(BasicBlock):
             with_spectral_norm=with_spectral_norm)
 
 
-@COMPONENTS.register_module()
+@MODELS.register_module()
 class ResNetDec(nn.Module):
     """ResNet decoder for image matting.
 
@@ -225,7 +225,7 @@ class ResNetDec(nn.Module):
         return x
 
 
-@COMPONENTS.register_module()
+@MODELS.register_module()
 class ResShortcutDec(ResNetDec):
     """ResNet decoder for image matting with shortcut connection.
 
@@ -290,7 +290,7 @@ class ResShortcutDec(ResNetDec):
         return x
 
 
-@COMPONENTS.register_module()
+@MODELS.register_module()
 class ResGCADecoder(ResShortcutDec):
     """ResNet decoder with shortcut connection and gca module.
 

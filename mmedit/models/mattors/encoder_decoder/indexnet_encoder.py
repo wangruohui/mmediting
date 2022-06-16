@@ -9,7 +9,7 @@ from mmcv.runner import load_checkpoint
 from mmcv.utils.parrots_wrapper import SyncBatchNorm
 
 from mmedit.models.common import ASPP, DepthwiseSeparableConvModule
-from mmedit.registry import COMPONENTS
+from mmedit.registry import MODELS
 from mmedit.utils import get_root_logger
 
 
@@ -304,7 +304,7 @@ class InvertedResidual(nn.Module):
         return out
 
 
-@COMPONENTS.register_module()
+@MODELS.register_module()
 class IndexNetEncoder(nn.Module):
     """Encoder for IndexNet.
 

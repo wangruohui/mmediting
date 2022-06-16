@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from mmcv.cnn import ConvModule, kaiming_init, normal_init
 
 from mmedit.models.common import DepthwiseSeparableConvModule
-from mmedit.registry import COMPONENTS
+from mmedit.registry import MODELS
 
 
 class IndexedUpsample(nn.Module):
@@ -70,7 +70,7 @@ class IndexedUpsample(nn.Module):
         return self.conv(out)
 
 
-@COMPONENTS.register_module()
+@MODELS.register_module()
 class IndexNetDecoder(nn.Module):
 
     def __init__(self,

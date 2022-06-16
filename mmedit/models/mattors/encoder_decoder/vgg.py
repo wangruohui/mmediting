@@ -4,11 +4,11 @@ from mmcv.cnn.utils.weight_init import constant_init, xavier_init
 from mmcv.runner import load_checkpoint
 
 from mmedit.models.common import ASPP
-from mmedit.registry import COMPONENTS
+from mmedit.registry import MODELS
 from mmedit.utils import get_root_logger
 
 
-@COMPONENTS.register_module()
+@MODELS.register_module()
 class VGG16(nn.Module):
     """Customized VGG16 Encoder.
 
