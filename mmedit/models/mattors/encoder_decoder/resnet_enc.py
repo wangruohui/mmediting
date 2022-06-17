@@ -316,9 +316,18 @@ class ResShortcutEnc(ResNetEnc):
                  act_cfg=dict(type='ReLU'),
                  with_spectral_norm=False,
                  late_downsample=False,
-                 order=('conv', 'act', 'norm')):
-        super().__init__(block, layers, in_channels, conv_cfg, norm_cfg,
-                         act_cfg, with_spectral_norm, late_downsample)
+                 order=('conv', 'act', 'norm'),
+                 init_cfg: Optional[dict] = None):
+        super().__init__(
+            block,
+            layers,
+            in_channels,
+            conv_cfg,
+            norm_cfg,
+            act_cfg,
+            with_spectral_norm,
+            late_downsample,
+            init_cfg=init_cfg)
 
         # TODO: rename self.midplanes to self.mid_channels in ResNetEnc
         self.shortcut_in_channels = [in_channels, self.midplanes, 64, 128, 256]
@@ -440,9 +449,19 @@ class ResGCAEncoder(ResShortcutEnc):
                  act_cfg=dict(type='ReLU'),
                  with_spectral_norm=False,
                  late_downsample=False,
-                 order=('conv', 'act', 'norm')):
-        super().__init__(block, layers, in_channels, conv_cfg, norm_cfg,
-                         act_cfg, with_spectral_norm, late_downsample, order)
+                 order=('conv', 'act', 'norm'),
+                 init_cfg: Optional[dict] = None):
+        super().__init__(
+            block,
+            layers,
+            in_channels,
+            conv_cfg,
+            norm_cfg,
+            act_cfg,
+            with_spectral_norm,
+            late_downsample,
+            order,
+            init_cfg=init_cfg)
 
         assert in_channels in (4, 6), (
             f'in_channels must be 4 or 6, but got {in_channels}')
@@ -472,15 +491,15 @@ class ResGCAEncoder(ResShortcutEnc):
 
         self.gca = GCAModule(128, 128)
 
-    def init_weights(self, pretrained=None):
-        if isinstance(pretrained, str):
-            logger = get_root_logger()
-            load_checkpoint(self, pretrained, strict=False, logger=logger)
-        elif pretrained is None:
-            super().init_weights()
-        else:
-            raise TypeError('"pretrained" must be a str or None. '
-                            f'But received {type(pretrained)}.')
+    # def init_weights(self, pretrained=None):
+    #     if isinstance(pretrained, str):
+    #         logger = get_root_logger()
+    #         load_checkpoint(self, pretrained, strict=False, logger=logger)
+    #     elif pretrained is None:
+    #         super().init_weights()
+    #     else:
+    #         raise TypeError('"pretrained" must be a str or None. '
+    #                         f'But received {type(pretrained)}.')
 
     def forward(self, x):
         """Forward function.

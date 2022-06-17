@@ -65,10 +65,10 @@ def main():
     print_colored_log(f'Working directory: {cfg.work_dir}')
     print_colored_log(f'Log directiry: {runner._log_dir}')
 
-    import torch
-    torch.save(runner.model.state_dict(), 'new-dim.pt')
+    # import torch
+    # torch.save(runner.model.state_dict(), 'new-gca.pt')
     # start training
-    # runner.train()
+    runner.train()
 
     print_colored_log(f'Log saved under {runner._log_dir}')
     print_colored_log(f'Checkpoint saved under {cfg.work_dir}')
