@@ -8,44 +8,20 @@
 # from .components import *  # noqa: F401, F403
 # from .extractors import LTE, FeedbackHourglass
 # from .inpaintors import (AOTInpaintor, DeepFillv1Inpaintor, GLInpaintor,
-#  OneStageInpaintor, PConvInpaintor, TwoStageInpaintor)
+#                          OneStageInpaintor, PConvInpaintor, TwoStageInpaintor)
 from .losses import *  # noqa: F401, F403
 from .mattors import *  # noqa: F401, F403
-
 # from .restorers import ESRGAN, SRGAN, BasicRestorer
 # from .synthesizers import CycleGAN, Pix2Pix
 # from .transformers import SearchTransformer
 # from .video_interpolators import CAIN, BasicInterpolator
 
 # __all__ = [
-#     'AOTInpaintor',
-#     'BaseModel',
-#     'BasicRestorer',
-#     'OneStageInpaintor',
-#     'build',
-#     'build_backbone',
-#     'build_component',
-#     'build_loss',
-#     'build_model',
-#     'BACKBONES',
-#     'COMPONENTS',
-#     'LOSSES',
-# 'BaseMattor',
-# 'DIM',
-#     'MODELS',
-#     'GLInpaintor',
-#     'PConvInpaintor',
-#     'SRGAN',
-# 'ESRGAN',
-# 'GCA',
-#     'TwoStageInpaintor',
-# 'IndexNet',
-#     'DeepFillv1Inpaintor',
-#     'Pix2Pix',
-#     'CycleGAN',
-#     'SearchTransformer',
-#     'LTE',
-#     'FeedbackHourglass',
-#     'BasicInterpolator',
-#     'CAIN',
+#     'AOTInpaintor', 'BaseModel', 'BasicRestorer', 'OneStageInpaintor', 'build',
+#     'build_backbone', 'build_component', 'build_loss', 'build_model',
+#     'BACKBONES', 'COMPONENTS', 'LOSSES', 'BaseMattor', 'DIM', 'MODELS',
+#     'GLInpaintor', 'PConvInpaintor', 'SRGAN', 'ESRGAN', 'GCA',
+#     'TwoStageInpaintor', 'IndexNet', 'DeepFillv1Inpaintor', 'Pix2Pix',
+#     'CycleGAN', 'SearchTransformer', 'LTE', 'FeedbackHourglass',
+#     'BasicInterpolator', 'CAIN'
 # ]

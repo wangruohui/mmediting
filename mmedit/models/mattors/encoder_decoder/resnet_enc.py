@@ -133,7 +133,9 @@ class ResNetEnc(BaseModule):
                  with_spectral_norm=False,
                  late_downsample=False,
                  init_cfg: Optional[dict] = None):
+
         super().__init__(init_cfg=init_cfg)
+
         if block == 'BasicBlock':
             block = BasicBlock
         else:
@@ -188,7 +190,7 @@ class ResNetEnc(BaseModule):
 
     def init_weights(self):
         if self.init_cfg is not None:
-            super().init_weights(strict=False, )
+            super().init_weights()
             if self.init_cfg['type'] == 'Pretrained':
                 # if pretrained weight is trained on 3-channel images,
                 # initialize other channels with zeros

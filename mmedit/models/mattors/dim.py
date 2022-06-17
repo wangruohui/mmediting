@@ -89,17 +89,17 @@ class DIM(BaseMattor):
         if loss_refine is not None:
             self.loss_refine = MODELS.build(loss_refine)
 
-        # Initialize pre-trained weights
-        self.init_weights(pretrained=pretrained)
+        # # Initialize pre-trained weights
+        # self.init_weights(pretrained=pretrained)
 
-    def init_weights(self, pretrained=None):
+    def init_weights(self):
         """Initialize the model network weights.
 
         Args:
             pretrained (str, optional): Path to the pretrained weight.
                 Defaults to None.
         """
-        super().init_weights(pretrained=pretrained)
+        super().init_weights()
         if self.with_refiner:
             self.refiner.init_weights()
 

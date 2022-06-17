@@ -43,7 +43,7 @@ class IndexedUpsample(BaseModule):
             norm_cfg=norm_cfg,
             act_cfg=dict(type='ReLU6'))
 
-        self.init_weights()
+        # self.init_weights()
 
     def init_weights(self):
         """Init weights for the module.
