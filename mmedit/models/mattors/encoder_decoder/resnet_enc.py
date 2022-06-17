@@ -1,8 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from typing import Optional
+
 import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.cnn import ConvModule, build_activation_layer, constant_init
 from mmcv.runner import load_checkpoint
+from mmengine.model import BaseModule
 
 from mmedit.models.common import GCAModule
 from mmedit.registry import MODELS
@@ -97,7 +100,7 @@ class BasicBlock(nn.Module):
 
 
 @MODELS.register_module()
-class ResNetEnc(nn.Module):
+class ResNetEnc(BaseModule):
     """ResNet encoder for image matting.
 
     This class is adopted from https://github.com/Yaoyi-Li/GCA-Matting.
@@ -128,8 +131,9 @@ class ResNetEnc(nn.Module):
                  norm_cfg=dict(type='BN'),
                  act_cfg=dict(type='ReLU'),
                  with_spectral_norm=False,
-                 late_downsample=False):
-        super().__init__()
+                 late_downsample=False,
+                 init_cfg: Optional[dict] = None):
+        super().__init__(init_cfg=init_cfg)
         if block == 'BasicBlock':
             block = BasicBlock
         else:
@@ -182,15 +186,14 @@ class ResNetEnc(nn.Module):
 
         self.out_channels = 512
 
-    def init_weights(self, pretrained=None):
-        if isinstance(pretrained, str):
-            # if pretrained weight is trained on 3-channel images,
-            # initialize other channels with zeros
-            self.conv1.conv.weight.data[:, 3:, :, :] = 0
-
-            logger = get_root_logger()
-            load_checkpoint(self, pretrained, strict=False, logger=logger)
-        elif pretrained is None:
+    def init_weights(self):
+        if self.init_cfg is not None:
+            super().init_weights(strict=False, )
+            if self.init_cfg['type'] == 'Pretrained':
+                # if pretrained weight is trained on 3-channel images,
+                # initialize other channels with zeros
+                self.conv1.conv.weight.data[:, 3:, :, :] = 0
+        else:
             for m in self.modules():
                 if isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
                     constant_init(m.weight, 1)
@@ -203,9 +206,6 @@ class ResNetEnc(nn.Module):
             for m in self.modules():
                 if isinstance(m, BasicBlock):
                     constant_init(m.conv2.bn.weight, 0)
-        else:
-            raise TypeError(f'"pretrained" must be a str or None. '
-                            f'But received {type(pretrained)}.')
 
     def _make_layer(self, block, planes, num_blocks, stride, conv_cfg,
                     norm_cfg, act_cfg, with_spectral_norm):

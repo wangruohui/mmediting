@@ -14,12 +14,17 @@ model = dict(
     ),
     backbone=dict(
         type='SimpleEncoderDecoder',
-        encoder=dict(type='IndexNetEncoder', in_channels=4, freeze_bn=True),
+        encoder=dict(
+            type='IndexNetEncoder',
+            in_channels=4,
+            freeze_bn=True,
+            init_cfg=dict(
+                type='Pretrained',
+                checkpoint='open-mmlab://mmedit/mobilenet_v2')),
         decoder=dict(type='IndexNetDecoder')),
     loss_alpha=dict(type='CharbonnierLoss', loss_weight=0.5, sample_wise=True),
     loss_comp=dict(
         type='CharbonnierCompLoss', loss_weight=1.5, sample_wise=True),
-    pretrained='open-mmlab://mmedit/mobilenet_v2',
     test_cfg=dict(
         resize_method='interp',
         resize_mode='bicubic',

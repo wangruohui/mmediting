@@ -1,16 +1,18 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import math
+from typing import Optional
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.cnn import ConvModule, kaiming_init, normal_init
+from mmengine.model import BaseModule
 
 from mmedit.models.common import DepthwiseSeparableConvModule
 from mmedit.registry import MODELS
 
 
-class IndexedUpsample(nn.Module):
+class IndexedUpsample(BaseModule):
     """Indexed upsample module.
 
     Args:
@@ -29,8 +31,9 @@ class IndexedUpsample(nn.Module):
                  out_channels,
                  kernel_size=5,
                  norm_cfg=dict(type='BN'),
-                 conv_module=ConvModule):
-        super().__init__()
+                 conv_module=ConvModule,
+                 init_cfg: Optional[dict] = None):
+        super().__init__(init_cfg=init_cfg)
 
         self.conv = conv_module(
             in_channels,
@@ -45,9 +48,12 @@ class IndexedUpsample(nn.Module):
     def init_weights(self):
         """Init weights for the module.
         """
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                kaiming_init(m, mode='fan_in', nonlinearity='leaky_relu')
+        if self.init_cfg is not None:
+            super().init_weights()
+        else:
+            for m in self.modules():
+                if isinstance(m, nn.Conv2d):
+                    kaiming_init(m, mode='fan_in', nonlinearity='leaky_relu')
 
     def forward(self, x, shortcut, dec_idx_feat=None):
         """Forward function.

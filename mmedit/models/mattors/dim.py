@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Tuple
+from typing import Optional, Tuple
 
 import torch
 from mmengine.logging import MMLogger
@@ -46,8 +46,8 @@ class DIM(BaseMattor):
                  refiner=None,
                  train_cfg=None,
                  test_cfg=None,
-                 pretrained=None,
                  loss_alpha=None,
+                 init_cfg: Optional[dict] = None,
                  loss_comp=None,
                  loss_refine=None):
         # Build data _preprocessor and backbone
@@ -55,7 +55,7 @@ class DIM(BaseMattor):
         super().__init__(
             backbone=backbone,
             data_preprocessor=data_preprocessor,
-            pretrained=pretrained,
+            init_cfg=init_cfg,
             train_cfg=train_cfg,
             test_cfg=test_cfg)
 
@@ -184,8 +184,8 @@ class DIM(BaseMattor):
         gt_merged = torch.stack(
             tuple(ds.gt_merged.data for ds in data_samples))
 
-        pred_alpha, pred_refine = self._forward(inputs,
-                                                refine=  self.train_cfg.train_refiner)
+        pred_alpha, pred_refine = self._forward(
+            inputs, refine=self.train_cfg.train_refiner)
 
         trimap = inputs[:, 3:, :, :]
         # Dim should use proc_trimap='rescale_to_zero_one'

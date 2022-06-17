@@ -19,13 +19,15 @@ model = dict(
             block='BasicBlock',
             layers=[3, 4, 4, 2],
             in_channels=6,
-            with_spectral_norm=True),
+            with_spectral_norm=True,
+            init_cfg=dict(
+                type='Pretrained',
+                checkpoint='open-mmlab://mmedit/res34_en_nomixup')),
         decoder=dict(
             type='ResShortcutDec',
             block='BasicBlockDec',
             layers=[2, 3, 3, 2],
             with_spectral_norm=True)),
-    pretrained='open-mmlab://mmedit/res34_en_nomixup',
     loss_alpha=dict(type='L1Loss'),
     test_cfg=dict(
         resize_method='pad',

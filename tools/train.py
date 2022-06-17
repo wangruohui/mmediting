@@ -4,10 +4,10 @@ import os
 import os.path as osp
 
 from mmengine.config import Config, DictAction
-from mmengine.logging import MMLogger
 from mmengine.runner import Runner
 
 from mmedit.registry import register_all_modules
+from mmedit.utils import print_colored_log
 
 
 def parse_args():
@@ -59,17 +59,19 @@ def main():
         cfg.work_dir = osp.join('./work_dirs',
                                 osp.splitext(osp.basename(args.config))[0])
 
-    # Create mmedit logger
-    logger = MMLogger.get_instance(name='mmedit', logger_name='mmedit')
-    logger.info(f'Configs:\n{cfg.pretty_text}')
-
     # build the runner from config
     runner = Runner.from_cfg(cfg)
 
-    # start training
-    runner.train()
+    print_colored_log(f'Working directory: {cfg.work_dir}')
+    print_colored_log(f'Log directiry: {runner._log_dir}')
 
-    logger.info(f'Results saved under {cfg.work_dir}')
+    import torch
+    torch.save(runner.model.state_dict(), 'new-dim.pt')
+    # start training
+    # runner.train()
+
+    print_colored_log(f'Log saved under {runner._log_dir}')
+    print_colored_log(f'Checkpoint saved under {cfg.work_dir}')
 
 
 if __name__ == '__main__':

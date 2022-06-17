@@ -1,11 +1,14 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from typing import Optional
+
 import torch.nn as nn
+from mmengine.model import BaseModule
 
 from mmedit.registry import MODELS
 
 
 @MODELS.register_module()
-class SimpleEncoderDecoder(nn.Module):
+class SimpleEncoderDecoder(BaseModule):
     """Simple encoder-decoder model from matting.
 
     Args:
@@ -13,17 +16,20 @@ class SimpleEncoderDecoder(nn.Module):
         decoder (dict): Config of the decoder.
     """
 
-    def __init__(self, encoder, decoder):
-        super().__init__()
+    def __init__(self,
+                 encoder: dict,
+                 decoder: dict,
+                 init_cfg: Optional[dict] = None):
+        super().__init__(init_cfg)
 
         self.encoder = MODELS.build(encoder)
         if hasattr(self.encoder, 'out_channels'):
             decoder['in_channels'] = self.encoder.out_channels
         self.decoder = MODELS.build(decoder)
 
-    def init_weights(self, pretrained=None):
-        self.encoder.init_weights(pretrained)
-        self.decoder.init_weights()
+    # def init_weights(self, pretrained=None):
+    #     self.encoder.init_weights(pretrained)
+    #     self.decoder.init_weights()
 
     def forward(self, *args, **kwargs):
         """Forward function.

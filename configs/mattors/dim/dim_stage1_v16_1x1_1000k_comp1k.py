@@ -14,11 +14,14 @@ model = dict(
     ),
     backbone=dict(
         type='SimpleEncoderDecoder',
-        encoder=dict(type='VGG16', in_channels=4),
+        encoder=dict(
+            type='VGG16',
+            in_channels=4,
+            init_cfg=dict(
+                type='Pretrained', checkpoint='open-mmlab://mmedit/vgg16')),
         decoder=dict(type='PlainDecoder')),
     loss_alpha=dict(type='CharbonnierLoss', loss_weight=0.5),
     loss_comp=dict(type='CharbonnierCompLoss', loss_weight=0.5),
-    pretrained='open-mmlab://mmedit/vgg16',
     train_cfg=dict(train_backbone=True, train_refiner=False),
     test_cfg=dict(
         refine=False,

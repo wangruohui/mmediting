@@ -1,10 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import List, Tuple
+from typing import Optional
 
 import torch
-from mmcv.runner import auto_fp16
 
-from mmedit.data_element import EditDataSample, PixelData
 from mmedit.registry import MODELS
 from .base_mattor import BaseMattor
 from .utils import get_unknown_tensor
@@ -30,14 +28,14 @@ class GCA(BaseMattor):
     def __init__(self,
                  data_preprocessor,
                  backbone,
+                 loss_alpha=None,
+                 init_cfg: Optional[dict] = None,
                  train_cfg=None,
-                 test_cfg=None,
-                 pretrained=None,
-                 loss_alpha=None):
+                 test_cfg=None):
         super().__init__(
             backbone=backbone,
             data_preprocessor=data_preprocessor,
-            pretrained=pretrained,
+            init_cfg=init_cfg,
             train_cfg=train_cfg,
             test_cfg=test_cfg)
 
@@ -71,7 +69,7 @@ class GCA(BaseMattor):
         pred_alpha = (raw_alpha.tanh() + 1.0) / 2.0
         return pred_alpha
 
-    def _forward_test(self, inputs ):
+    def _forward_test(self, inputs):
         return self._forward(inputs)
 
     # def forward_dummy(self, inputs):

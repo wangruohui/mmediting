@@ -1,8 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from typing import Optional
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.cnn.utils.weight_init import xavier_init
+from mmengine.model import BaseModule
 from torch.autograd import Function
 from torch.nn.modules.pooling import _MaxUnpoolNd
 from torch.nn.modules.utils import _pair
@@ -130,15 +133,15 @@ class MaxUnpool2d(_MaxUnpoolNd):
 
 
 @MODELS.register_module()
-class PlainDecoder(nn.Module):
+class PlainDecoder(BaseModule):
     """Simple decoder from Deep Image Matting.
 
     Args:
         in_channels (int): Channel num of input features.
     """
 
-    def __init__(self, in_channels):
-        super().__init__()
+    def __init__(self, in_channels, init_cfg: Optional[dict] = None):
+        super().__init__(init_cfg=init_cfg)
 
         self.deconv6_1 = nn.Conv2d(in_channels, 512, kernel_size=1)
         self.deconv5_1 = nn.Conv2d(512, 512, kernel_size=5, padding=2)
@@ -156,9 +159,13 @@ class PlainDecoder(nn.Module):
     def init_weights(self):
         """Init weights for the module.
         """
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                xavier_init(m)
+        if self.init_cfg is not None:
+            super().init_weights()
+        else:
+            # Default initialization
+            for m in self.modules():
+                if isinstance(m, nn.Conv2d):
+                    xavier_init(m)
 
     def forward(self, inputs):
         """Forward function of PlainDecoder.

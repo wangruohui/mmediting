@@ -29,13 +29,13 @@ class IndexNet(BaseMattor):
                  backbone,
                  loss_alpha=None,
                  loss_comp=None,
+                 init_cfg=None,
                  train_cfg=None,
-                 test_cfg=None,
-                 pretrained=None):
+                 test_cfg=None):
         super().__init__(
             backbone=backbone,
             data_preprocessor=data_preprocessor,
-            pretrained=pretrained,
+            init_cfg=init_cfg,
             train_cfg=train_cfg,
             test_cfg=test_cfg)
 

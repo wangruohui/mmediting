@@ -84,32 +84,33 @@ class BaseMattor(BaseModel, metaclass=ABCMeta):
     def __init__(self,
                  data_preprocessor: Union[dict, Config],
                  backbone: dict,
+                 init_cfg: Optional[dict] = None,
                  train_cfg: Optional[dict] = None,
-                 test_cfg: Optional[dict] = None,
-                 pretrained=None):
-        # Initialize nn.Module
-        # Build data processor
-        super().__init__(data_preprocessor=data_preprocessor)
+                 test_cfg: Optional[dict] = None):
+        # Build data_preprocessor in BaseModel
+        # Initialize weights in BaseModule
+        super().__init__(
+            data_preprocessor=data_preprocessor, init_cfg=init_cfg)
 
         self.train_cfg = train_cfg if train_cfg is not None else ConfigDict()
         self.test_cfg = test_cfg if test_cfg is not None else ConfigDict()
 
         self.backbone = MODELS.build(backbone)
 
-        # sub-class should re-init if there are more modules
-        self.init_weights(pretrained)
+    #     # sub-class should re-init if there are more modules
+    #     self.init_weights()
 
-    def init_weights(self, pretrained=None):
-        """Initialize the model with pretrained weights.
+    # def init_weights(self, pretrained=None):
+    #     """Initialize the model with pretrained weights.
 
-        Args:
-            pretrained (str, optional): Path to the pretrained weight.
-                Defaults to None.
-        """
-        if pretrained is not None:
-            logger = MMLogger.get_instance(name='mmedit')
-            logger.warn(f'Loading model from: {pretrained} ...')
-        self.backbone.init_weights(pretrained)
+    #     Args:
+    #         pretrained (str, optional): Path to the pretrained weight.
+    #             Defaults to None.
+    #     """
+    #     if pretrained is not None:
+    #         logger = MMLogger.get_instance(name='mmedit')
+    #         logger.warn(f'Loading model from: {pretrained} ...')
+    #     self.backbone.init_weights(pretrained)
 
     def resize_inputs(self, batch_inputs):
         """Pad or interpolate images and trimaps to multiple of given factor.
