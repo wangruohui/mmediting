@@ -32,6 +32,14 @@ class SimpleEncoderDecoder(nn.Module):
         Returns:
             Tensor: The output tensor of the decoder.
         """
+        import thckpt
+        exp = thckpt.Experiment(exp_name='master', root_dir='d:\exp')
+        # args = exp.checkpoint(args, 'args')
         out = self.encoder(*args, **kwargs)
+        # out = exp.checkpoint(out, 'enc-out')
+        # out = exp.save(out, 'enc-out-save')
         out = self.decoder(out)
+        # out = exp.checkpoint(out, 'dec-out')
+        # out = exp.save(out, 'dec-out-save')
+
         return out

@@ -154,6 +154,12 @@ def main():
     meta['seed'] = seed
     meta['env_info'] = env_info
 
+    import thckpt
+    exp = thckpt.Experiment(
+        exp_name='master', root_dir='d:\exp').set_mode('load')
+    exp2 = thckpt.Experiment(
+        exp_name='master2', root_dir='d:\exp').set_mode('save')
+    model = exp.checkpoint(model, 'model')
     # add an attribute for visualization convenience
     train_model(
         model,

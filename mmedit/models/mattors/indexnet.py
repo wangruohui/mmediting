@@ -63,15 +63,33 @@ class IndexNet(BaseMattor):
         Returns:
             dict: Contains the loss items and batch information.
         """
+
+        torch.use_deterministic_algorithms(True)
+        import thckpt
+        exp = thckpt.Experiment(exp_name='master', root_dir='d:\exp')
+        exp2 = thckpt.Experiment(exp_name='master2', root_dir='d:\exp')
+        input = (merged, trimap, alpha, ori_merged, fg, bg)
+        merged, trimap, alpha, ori_merged, fg, bg = exp.checkpoint(
+            input, 'input')
+        # input = (merged, trimap, alpha, ori_merged, fg, bg)
         pred_alpha = self.backbone(torch.cat((merged, trimap), 1))
+        # pred_alpha = exp.checkpoint(pred_alpha, 'pred')
+        # exp.save(self, 'model-eval')
+        # exp2.save(self, 'model-eval')
 
         losses = dict()
         weight = get_unknown_tensor(trimap, meta)
+        # weight = exp.checkpoint(weight, 'weight')
+        # assert (weight == weight1).all()
+        # exp2.save(weight, 'weight')
+
         if self.loss_alpha is not None:
             losses['loss_alpha'] = self.loss_alpha(pred_alpha, alpha, weight)
         if self.loss_comp is not None:
             losses['loss_comp'] = self.loss_comp(pred_alpha, fg, bg,
                                                  ori_merged, weight)
+        # exp.save(losses, 'losses')
+        print(losses)
         return {'losses': losses, 'num_samples': merged.size(0)}
 
     def forward_test(self,

@@ -92,10 +92,16 @@ test_pipeline = [
     dict(type='ImageToTensor', keys=['merged', 'trimap']),
 ]
 data = dict(
-    workers_per_gpu=8,
-    train_dataloader=dict(samples_per_gpu=16, drop_last=True),
-    val_dataloader=dict(samples_per_gpu=1),
-    test_dataloader=dict(samples_per_gpu=1),
+    workers_per_gpu=0,
+    train_dataloader=dict(
+        samples_per_gpu=2,
+        drop_last=True,
+        shuffle=False,
+        persistent_workers=False),
+    val_dataloader=dict(
+        samples_per_gpu=1, shuffle=False, persistent_workers=False),
+    test_dataloader=dict(
+        samples_per_gpu=1, shuffle=False, persistent_workers=False),
     train=dict(
         type=dataset_type,
         ann_file=f'{data_root}/training_list.json',

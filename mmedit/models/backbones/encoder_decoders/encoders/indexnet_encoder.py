@@ -525,6 +525,11 @@ class IndexNetEncoder(nn.Module):
 
         x = self.dconv(x)
 
+        print(x.mean())
+        print(x.std())
+        print(x.min())
+        print(x.max())
+
         return {
             'out': x,
             'shortcuts': shortcuts,
