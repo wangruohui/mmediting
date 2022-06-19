@@ -415,8 +415,9 @@ class IndexNetEncoder(BaseModule):
             self.layers.append(self._make_layer(layer_setting, norm_cfg))
 
         # freeze encoder batch norm layers
-        if freeze_bn:
-            self.freeze_bn()
+        self.freeze_bn = freeze_bn
+        # if freeze_bn:
+        #     self.freeze_bn()
 
         # build index blocks
         self.index_layers = nn.ModuleList()
@@ -475,12 +476,13 @@ class IndexNetEncoder(BaseModule):
                     use_res_connect=True))
         return nn.Sequential(*layers)
 
-    def freeze_bn(self):
-        """Set BatchNorm modules in the model to evaluation mode.
-        """
-        for m in self.modules():
-            if isinstance(m, (nn.BatchNorm2d, SyncBatchNorm)):
-                m.eval()
+    def train(self, mode=True):
+        """Set BatchNorm modules in the model to evaluation mode."""
+        super().train(mode)
+        if mode and self.freeze_bn:
+            for m in self.modules():
+                if isinstance(m, (nn.BatchNorm2d, SyncBatchNorm)):
+                    m.eval()
 
     def init_weights(self):
         """Init weights for the model.
