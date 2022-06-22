@@ -112,6 +112,9 @@ class GenerateTrimap:
             dict: A dict containing the processed data and information.
         """
         alpha = results['alpha']
+        import thckpt
+        exp = thckpt.Experiment(exp_name='master', root_dir='d:/')
+        exp.npseed()
 
         if self.random:
             kernel_num = len(self.kernels)
@@ -120,6 +123,7 @@ class GenerateTrimap:
             min_iter, max_iter = self.iterations
             erode_iter = np.random.randint(min_iter, max_iter)
             dilate_iter = np.random.randint(min_iter, max_iter)
+            print(erode_kernel_idx, dilate_kernel_idx, erode_iter, dilate_iter)
         else:
             erode_kernel_idx, dilate_kernel_idx = 0, 1
             erode_iter, dilate_iter = self.iterations

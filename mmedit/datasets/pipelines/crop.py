@@ -564,6 +564,9 @@ class CropAroundUnknown:
         Returns:
             dict: A dict containing the processed data and information.
         """
+        import thckpt
+        exp = thckpt.Experiment(exp_name='master', root_dir='d:/')
+        exp.npseed()
         h, w = results[self.keys[0]].shape[:2]
 
         rand_ind = np.random.randint(len(self.crop_sizes))

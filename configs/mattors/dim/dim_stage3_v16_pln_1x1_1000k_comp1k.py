@@ -70,8 +70,10 @@ test_pipeline = [
     dict(type='ImageToTensor', keys=['merged', 'trimap']),
 ]
 data = dict(
+    train_dataloader=dict(shuffle=False, persistent_workers=False),
+    val_dataloader=dict(shuffle=False, persistent_workers=False),
     samples_per_gpu=1,
-    workers_per_gpu=4,
+    workers_per_gpu=0,
     train=dict(
         type=dataset_type,
         ann_file=f'{data_root}/training_list.json',
@@ -109,6 +111,6 @@ total_iters = 1000000
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
 work_dir = './work_dirs/dim_finetune'
-load_from = './work_dirs/dim_stage2/latest.pth'
+load_from = './checkpoints/dim_stage2_v16_pln_1x1_1000k_comp1k_SAD-52.3_20200607_171909-d83c4775.pth'
 resume_from = None
 workflow = [('train', 1)]

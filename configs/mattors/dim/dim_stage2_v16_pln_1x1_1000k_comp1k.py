@@ -68,6 +68,8 @@ test_pipeline = [
     dict(type='ImageToTensor', keys=['merged', 'trimap']),
 ]
 data = dict(
+    train_dataloader=dict(shuffle=False, persistent_workers=False),
+    val_dataloader=dict(shuffle=False, persistent_workers=False),
     samples_per_gpu=1,
     workers_per_gpu=4,
     train=dict(
@@ -107,6 +109,6 @@ total_iters = 1000000
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
 work_dir = './work_dirs/dim_stage2'
-load_from = './work_dirs/dim_stage1/latest.pth'
+load_from =
 resume_from = None
 workflow = [('train', 1)]

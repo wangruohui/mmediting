@@ -47,6 +47,10 @@ class DIM(BaseMattor):
                  loss_alpha=None,
                  loss_comp=None,
                  loss_refine=None):
+        import thckpt
+        exp = thckpt.Experiment('master', 'd:/exp')
+        # exp.thseed()
+
         super().__init__(backbone, refiner, train_cfg, test_cfg, pretrained)
 
         if all(v is None for v in (loss_alpha, loss_comp, loss_refine)):
@@ -98,6 +102,12 @@ class DIM(BaseMattor):
         Returns:
             dict: Contains the loss items and batch information.
         """
+        import thckpt
+        exp = thckpt.Experiment('master', 'd:/exp')
+        exp.set_mode('save')
+        exp.checkpoint(self, 'model', once=True)
+        exp.checkpoint((merged, trimap, meta, alpha, ori_merged, fg, bg),
+                       'input')
         pred_alpha, pred_refine = self._forward(
             torch.cat((merged, trimap), 1), self.train_cfg.train_refiner)
 
@@ -113,6 +123,7 @@ class DIM(BaseMattor):
         if self.train_cfg.train_refiner:
             losses['loss_refine'] = self.loss_refine(pred_refine, alpha,
                                                      weight)
+        print(losses)
         return {'losses': losses, 'num_samples': merged.size(0)}
 
     def forward_test(self,
