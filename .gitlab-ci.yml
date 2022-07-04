@@ -8,10 +8,6 @@ stages:
 
 before_script:
   - . /root/scripts/set_envs.sh
-  - unset http_proxy
-  - unset https_proxy
-  - unset HTTP_PROXY
-  - unset HTTPS_PROXY
   - echo $PATH
   - gcc --version
   - nvcc --version
@@ -30,8 +26,9 @@ linting:
   stage: test
   script:
     - echo "Start building..."
-    - http_proxy= https_proxy= HTTP_PROXY= HTTPS_PROXY= echo `curl https://ipinfo.io/ip`
-    - http_proxy= https_proxy= HTTP_PROXY= HTTPS_PROXY= pip install -e .[all] -i https://pypi.tuna.tsinghua.edu.cn/simple/
+    - echo `curl https://ipinfo.io/ip`
+    - http_proxy= https_proxy= HTTP_PROXY= HTTPS_PROXY= pip install -e .[all] -i https://mirror.sjtu.edu.cn/pypi/web/simple
+    - pip list
     - python -c "import mmedit; print(mmedit.__version__)"
     - echo "Start testing..."
     - coverage run --branch --source mmedit -m pytest tests/
