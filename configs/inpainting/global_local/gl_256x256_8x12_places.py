@@ -89,8 +89,8 @@ test_pipeline = train_pipeline
 data_root = 'data/places365'
 
 data = dict(
-    workers_per_gpu=4,
-    train_dataloader=dict(samples_per_gpu=12, drop_last=True),
+    workers_per_gpu=0,
+    train_dataloader=dict(samples_per_gpu=1, drop_last=True),
     val_dataloader=dict(samples_per_gpu=1),
     test_dataloader=dict(samples_per_gpu=1),
     train=dict(
