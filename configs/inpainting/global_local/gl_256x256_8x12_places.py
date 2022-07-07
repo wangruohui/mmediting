@@ -42,7 +42,7 @@ train_cfg = dict(
     iter_td=100000,
     start_iter=350000,
     local_size=(128, 128))
-test_cfg = dict(metrics=['l1'])
+test_cfg = dict(metrics=['l1', 'psnr', 'ssim'])
 
 dataset_type = 'ImgInpaintingDataset'
 input_shape = (256, 256)
@@ -54,15 +54,15 @@ train_pipeline = [
         mask_mode='bbox',
         mask_config=dict(
             max_bbox_shape=(128, 128),
-            max_bbox_delta=40,
+            max_bbox_delta=0,
             min_margin=20,
             img_shape=input_shape)),
-    dict(
-        type='Crop',
-        keys=['gt_img'],
-        crop_size=(384, 384),
-        random_crop=True,
-    ),
+    # dict(
+    #     type='Crop',
+    #     keys=['gt_img'],
+    #     crop_size=(384, 384),
+    #     random_crop=True,
+    # ),
     dict(
         type='Resize',
         keys=['gt_img'],
@@ -91,8 +91,8 @@ data_root = 'data/places365'
 data = dict(
     workers_per_gpu=0,
     train_dataloader=dict(samples_per_gpu=1, drop_last=True),
-    val_dataloader=dict(samples_per_gpu=1),
-    test_dataloader=dict(samples_per_gpu=1),
+    val_dataloader=dict(samples_per_gpu=1, persistent_workers=False),
+    test_dataloader=dict(samples_per_gpu=1, persistent_workers=False),
     train=dict(
         type=dataset_type,
         ann_file=f'{data_root}/train_places_img_list_total.txt',
@@ -100,6 +100,12 @@ data = dict(
         pipeline=train_pipeline,
         test_mode=False),
     val=dict(
+        type=dataset_type,
+        ann_file=f'{data_root}/val_places_img_list.txt',
+        data_prefix=data_root,
+        pipeline=test_pipeline,
+        test_mode=True),
+    test=dict(
         type=dataset_type,
         ann_file=f'{data_root}/val_places_img_list.txt',
         data_prefix=data_root,

@@ -62,8 +62,8 @@ def random_bbox(img_shape, max_bbox_shape, max_bbox_delta=40, min_margin=20):
     max_top = img_h - margin_h - max_mask_h
     max_left = img_w - margin_w - max_mask_w
     # randomly select a (top, left)
-    top = np.random.randint(margin_h, max_top)
-    left = np.random.randint(margin_w, max_left)
+    top = (margin_h + max_top) // 2
+    left = (margin_w + max_left) // 2
     # randomly shrink the shape of mask box according to `max_bbox_delta`
     # the center of box is fixed
     delta_top = np.random.randint(0, max_delta_h // 2 + 1)
