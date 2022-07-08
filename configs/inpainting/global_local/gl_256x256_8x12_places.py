@@ -54,15 +54,15 @@ train_pipeline = [
         mask_mode='bbox',
         mask_config=dict(
             max_bbox_shape=(128, 128),
-            max_bbox_delta=0,
+            max_bbox_delta=40,
             min_margin=20,
             img_shape=input_shape)),
-    # dict(
-    #     type='Crop',
-    #     keys=['gt_img'],
-    #     crop_size=(384, 384),
-    #     random_crop=True,
-    # ),
+    dict(
+        type='Crop',
+        keys=['gt_img'],
+        crop_size=(384, 384),
+        random_crop=True,
+    ),
     dict(
         type='Resize',
         keys=['gt_img'],
