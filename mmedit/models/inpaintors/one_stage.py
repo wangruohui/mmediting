@@ -263,23 +263,14 @@ class OneStageInpaintor(BaseModel):
         Returns:
             dict: Contain output results and eval metrics (if have).
         """
-        a = masked_img[0].cpu().numpy().transpose(1, 2, 0)
-        import mmcv
-        mmcv.imwrite(a * 127.5 + 127.5, "a.png")
         input_x = torch.cat([masked_img, mask], dim=1)
         fake_res = self.generator(input_x)
         fake_img = fake_res * mask + masked_img * (1. - mask)
-        mmcv.imwrite(
-            fake_img[0].cpu().numpy().transpose(1, 2, 0) * 127.5 + 127.5,
-            "pred.png")
 
         output = dict()
         eval_result = {}
         if self.eval_with_metrics:
             gt_img = kwargs['gt_img']
-            mmcv.imwrite(
-                gt_img[0].cpu().numpy().transpose(1, 2, 0) * 127.5 + 127.5,
-                "gt.png")
             data_dict = dict(gt_img=gt_img, fake_res=fake_res, mask=mask)
             for metric_name in self.test_cfg['metrics']:
                 if metric_name in ['ssim', 'psnr']:

@@ -188,9 +188,6 @@ def psnr(img1, img2, crop_border=0, input_order='HWC', convert_to=None):
         float: psnr result.
     """
 
-    import mmcv
-    mmcv.imwrite(img1, "fake.png")
-    mmcv.imwrite(img2, "gt.png")
     assert img1.shape == img2.shape, (
         f'Image shapes are different: {img1.shape}, {img2.shape}.')
     if input_order not in ['HWC', 'CHW']:
@@ -373,8 +370,7 @@ class L1Evaluation:
         else:
             pred = data_dict.get('fake_res')
         mask = data_dict.get('mask', None)
-        print((abs(pred - gt) * mask).sum())
-        print(mask.sum())
+
         from mmedit.models.losses.pixelwise_loss import l1_loss
         l1_error = l1_loss(pred, gt, weight=mask, reduction='mean')
 
