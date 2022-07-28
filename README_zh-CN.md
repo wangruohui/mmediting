@@ -216,8 +216,9 @@ MMEditing 是一款由不同学校和公司共同贡献的开源项目。我们�
 
 ## 学习资料
 
-- [![底层视觉与 MMEditing（上）](https://i2.hdslb.com/bfs/archive/01d51d14a091e96f8c42031390f08f62cb18b699.png@240w_140h_1c.webp)](https://www.bilibili.com/video/BV1zq4y1o7ph/)
-  [![底层视觉与 MMEditing（下）](https://i0.hdslb.com/bfs/archive/3c314ffc38bced8002162319cb75f883b4694445.png@240w_140h_1c.webp)](https://www.bilibili.com/video/BV1cQ4y167KL/)
+[![底层视觉与 MMEditing（上）](https://i2.hdslb.com/bfs/archive/01d51d14a091e96f8c42031390f08f62cb18b699.png@240w_140h_1c.webp)](https://www.bilibili.com/video/BV1zq4y1o7ph/)
+[![底层视觉与 MMEditing（下）](https://i0.hdslb.com/bfs/archive/3c314ffc38bced8002162319cb75f883b4694445.png@240w_140h_1c.webp)](https://www.bilibili.com/video/BV1cQ4y167KL/)
+
 - [零基础 Pytorch 入门超分辨率](https://mp.weixin.qq.com/s?__biz=MzI4MDcxNTY2MQ==&mid=2247484944&idx=1&sn=a5beb51cc709484519e3c60c2f9c5557&chksm=ebb50ef2dcc287e42c9da13c784e60a3ca03affdb5313e69c4d7fc6009bc6e45ec34f1275b15&token=1125533908&lang=zh_CN#rd)
 - [视觉底层任务优秀开源工作：MMEditing 库使用方法](http://mp.weixin.qq.com/s?__biz=MzI4MDcxNTY2MQ==&mid=2247489786&idx=1&sn=a103a893b38f66759b969590a98f1475&chksm=ebb51018dcc2990e66ec61b34cc925b87858d3dec41075d71772f0602406e912cd64d07e40b7#rd)
 - [让 GLEAN 还原你女神的美妙容颜](https://mp.weixin.qq.com/s?__biz=MzI4MDcxNTY2MQ==&mid=2247485438&idx=1&sn=4db5342eee135b66757638743d2b4c5f&chksm=ebb50f1cdcc2860a2e3bce2c7bf4619172959475d4fcf2c39e4662286e8d750b76e93d236f24&token=1125533908&lang=zh_CN#rd)
