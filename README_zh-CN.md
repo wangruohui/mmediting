@@ -216,22 +216,24 @@ MMEditing 是一款由不同学校和公司共同贡献的开源项目。我们�
 
 ## 学习资料
 
-[![底层视觉与 MMEditing（上）](https://i2.hdslb.com/bfs/archive/01d51d14a091e96f8c42031390f08f62cb18b699.png@240w_140h_1c.webp)](https://www.bilibili.com/video/BV1zq4y1o7ph/)
-[![底层视觉与 MMEditing（下）](https://i0.hdslb.com/bfs/archive/3c314ffc38bced8002162319cb75f883b4694445.png@240w_140h_1c.webp)](https://www.bilibili.com/video/BV1cQ4y167KL/)
+- [![底层视觉与 MMEditing（上）](https://i2.hdslb.com/bfs/archive/01d51d14a091e96f8c42031390f08f62cb18b699.png@240w_140h_1c.webp)](https://www.bilibili.com/video/BV1zq4y1o7ph/)
+  [![底层视觉与 MMEditing（下）](https://i0.hdslb.com/bfs/archive/3c314ffc38bced8002162319cb75f883b4694445.png@240w_140h_1c.webp)](https://www.bilibili.com/video/BV1cQ4y167KL/)
 
-[还在眨眼补帧？手把手教你插帧算法，让视频顺滑如丝](https://mp.weixin.qq.com/s?__biz=MzI4MDcxNTY2MQ==&mid=2247493512&idx=1&sn=92f81a0ab8b45a686d1100e3aae78144&chksm=ebb6ef6adcc1667c491ec104db9e39257656aae5ffb23fc425228ae5368ab0ebad1d31d0ed22&token=1125533908&lang=zh_CN#rd)
+- [零基础 Pytorch 入门超分辨率](https://mp.weixin.qq.com/s?__biz=MzI4MDcxNTY2MQ==&mid=2247484944&idx=1&sn=a5beb51cc709484519e3c60c2f9c5557&chksm=ebb50ef2dcc287e42c9da13c784e60a3ca03affdb5313e69c4d7fc6009bc6e45ec34f1275b15&token=1125533908&lang=zh_CN#rd)
 
-[手把手带你训练 CVPR2022 视频超分模型](http://mp.weixin.qq.com/s?__biz=MzI4MDcxNTY2MQ==&mid=2247490241&idx=1&sn=519312b9df321181385e84d996c91832&chksm=ebb51223dcc29b35e079408e76d0a58a9486b012c21fa81b8813296c89cf7945ad7589a4821f#rd)
+- [视觉底层任务优秀开源工作：MMEditing 库使用方法](http://mp.weixin.qq.com/s?__biz=MzI4MDcxNTY2MQ==&mid=2247489786&idx=1&sn=a103a893b38f66759b969590a98f1475&chksm=ebb51018dcc2990e66ec61b34cc925b87858d3dec41075d71772f0602406e912cd64d07e40b7#rd)
 
-[视觉底层任务优秀开源工作：MMEditing 库使用方法](http://mp.weixin.qq.com/s?__biz=MzI4MDcxNTY2MQ==&mid=2247489786&idx=1&sn=a103a893b38f66759b969590a98f1475&chksm=ebb51018dcc2990e66ec61b34cc925b87858d3dec41075d71772f0602406e912cd64d07e40b7#rd)
+- [让 GLEAN 还原你女神的美妙容颜](https://mp.weixin.qq.com/s?__biz=MzI4MDcxNTY2MQ==&mid=2247485438&idx=1&sn=4db5342eee135b66757638743d2b4c5f&chksm=ebb50f1cdcc2860a2e3bce2c7bf4619172959475d4fcf2c39e4662286e8d750b76e93d236f24&token=1125533908&lang=zh_CN#rd)
 
-[不容错过！作者亲自解读 RealBasicVSR](http://mp.weixin.qq.com/s?__biz=MzI4MDcxNTY2MQ==&mid=2247489508&idx=1&sn=07d27e99713d052c8a088553707f1adf&chksm=ebb51f06dcc29610761f2623fe3e86f0403bbf1c939eb86cce2b55faf3b315ac0d39d39254ac#rd)
+- [MMEditing | 新视频超分算法冠军BasicVSR++来了](https://mp.weixin.qq.com/s?__biz=MzI4MDcxNTY2MQ==&mid=2247483847&idx=1&sn=4c7b166efab7cc15af1f3b12ccd0a7b6&chksm=ebb50925dcc28033f56d3111533ab9fdfd551d6f351dd2a89f130208ed99134ccc3cb65612c4&token=1125533908&lang=zh_CN#rd)
 
-[一键慢镜头：视频插帧，让老电影“纵享丝滑”](http://mp.weixin.qq.com/s?__biz=MzI4MDcxNTY2MQ==&mid=2247487939&idx=1&sn=3075c73123e514ca8c3ae4dd903d6d7f&chksm=ebb51921dcc290375224adc5f28a53038112cc5f528475b953014825d32d4f7989277c3260df#rd)
+- [不容错过！作者亲自解读 RealBasicVSR](http://mp.weixin.qq.com/s?__biz=MzI4MDcxNTY2MQ==&mid=2247489508&idx=1&sn=07d27e99713d052c8a088553707f1adf&chksm=ebb51f06dcc29610761f2623fe3e86f0403bbf1c939eb86cce2b55faf3b315ac0d39d39254ac#rd)
 
-[让 GLEAN 还原你女神的美妙容颜](https://mp.weixin.qq.com/s?__biz=MzI4MDcxNTY2MQ==&mid=2247485438&idx=1&sn=4db5342eee135b66757638743d2b4c5f&chksm=ebb50f1cdcc2860a2e3bce2c7bf4619172959475d4fcf2c39e4662286e8d750b76e93d236f24&token=1125533908&lang=zh_CN#rd)
+- [手把手带你训练 CVPR2022 视频超分模型](http://mp.weixin.qq.com/s?__biz=MzI4MDcxNTY2MQ==&mid=2247490241&idx=1&sn=519312b9df321181385e84d996c91832&chksm=ebb51223dcc29b35e079408e76d0a58a9486b012c21fa81b8813296c89cf7945ad7589a4821f#rd)
 
-[MMEditing | 新视频超分算法冠军BasicVSR++来了](https://mp.weixin.qq.com/s?__biz=MzI4MDcxNTY2MQ==&mid=2247483847&idx=1&sn=4c7b166efab7cc15af1f3b12ccd0a7b6&chksm=ebb50925dcc28033f56d3111533ab9fdfd551d6f351dd2a89f130208ed99134ccc3cb65612c4&token=1125533908&lang=zh_CN#rd)
+- [一键慢镜头：视频插帧，让老电影“纵享丝滑”](http://mp.weixin.qq.com/s?__biz=MzI4MDcxNTY2MQ==&mid=2247487939&idx=1&sn=3075c73123e514ca8c3ae4dd903d6d7f&chksm=ebb51921dcc290375224adc5f28a53038112cc5f528475b953014825d32d4f7989277c3260df#rd)
+
+- [还在眨眼补帧？手把手教你插帧算法，让视频顺滑如丝](https://mp.weixin.qq.com/s?__biz=MzI4MDcxNTY2MQ==&mid=2247493512&idx=1&sn=92f81a0ab8b45a686d1100e3aae78144&chksm=ebb6ef6adcc1667c491ec104db9e39257656aae5ffb23fc425228ae5368ab0ebad1d31d0ed22&token=1125533908&lang=zh_CN#rd)
 
 [🧐访问课程主页了解更多🧐](https://github.com/open-mmlab/OpenMMLabCourse)
 
