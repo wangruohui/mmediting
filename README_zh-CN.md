@@ -216,10 +216,9 @@ MMEditing 是一款由不同学校和公司共同贡献的开源项目。我们�
 
 ## 教学视频
 
-[![底层视觉与 MMEditing（上）](https://i2.hdslb.com/bfs/archive/01d51d14a091e96f8c42031390f08f62cb18b699.png@336w_190h_1c.webp)](https://www.bilibili.com/video/BV1zq4y1o7ph/)
-[![底层视觉与 MMEditing（下）](https://i0.hdslb.com/bfs/archive/3c314ffc38bced8002162319cb75f883b4694445.png@336w_190h_1c.webp)](https://www.bilibili.com/video/BV1cQ4y167KL/)
-
-[更多教学视频](https://github.com/open-mmlab/OpenMMLabCourse)
+- [底层视觉与 MMEditing（上）](https://www.bilibili.com/video/BV1zq4y1o7ph/)
+- [底层视觉与 MMEditing（下）](https://www.bilibili.com/video/BV1cQ4y167KL/)
+- [更多教学视频](https://github.com/open-mmlab/OpenMMLabCourse)
 
 ## OpenMMLab 的其他项目
 
