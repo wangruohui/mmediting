@@ -255,13 +255,8 @@ MMEditing 是一款由不同学校和公司共同贡献的开源项目。我们�
 
 干货满满 📘，等你来撩 💗，OpenMMLab 社区期待您的加入 👬
 
-# OpenMMLabCourse
+## 算法课程与代码教程
 
-OpenMMLab course index and materials
-
-## 《通用视觉框架 OpenMMLab》 公开课
-
-|       |                                 课程内容                                  |                                                                       课程视频                                                                       | 代码教学 | 课程中的代码 |
-| :---: | :-----------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------: | :------: | :------: |
-| 第6讲 | [底层视觉与 MMEditing（上）](https://www.bilibili.com/video/BV1zq4y1o7ph/) | [![Link](https://i2.hdslb.com/bfs/archive/01d51d14a091e96f8c42031390f08f62cb18b699.png@336w_190h_1c.webp)](https://www.bilibili.com/video/BV1zq4y1o7ph/) | [![Link](https://i2.hdslb.com/bfs/archive/01d51d14a091e96f8c42031390f08f62cb18b699.png@336w_190h_1c.webp)](https://www.bilibili.com/video/BV1zq4y1o7ph?p=5)          |  [lec6.ipynb](codes/lec6.ipynb)     |
-| 第7讲 | [底层视觉与 MMEditing（下）](https://www.bilibili.com/video/BV1cQ4y167KL/) | [![Link](https://i0.hdslb.com/bfs/archive/3c314ffc38bced8002162319cb75f883b4694445.png@336w_190h_1c.webp)](https://www.bilibili.com/video/BV1cQ4y167KL/) | [![Link](https://i0.hdslb.com/bfs/archive/3c314ffc38bced8002162319cb75f883b4694445.png@336w_190h_1c.webp)](https://www.bilibili.com/video/BV1cQ4y167KL?p=4)        |  [lec7.ipynb](codes/lec7.ipynb)    |
+[![底层视觉与 MMEditing（上）](https://i2.hdslb.com/bfs/archive/01d51d14a091e96f8c42031390f08f62cb18b699.png@336w_190h_1c.webp)](https://www.bilibili.com/video/BV1zq4y1o7ph/)
+[![底层视觉与 MMEditing（下）](https://i0.hdslb.com/bfs/archive/3c314ffc38bced8002162319cb75f883b4694445.png@336w_190h_1c.webp)]
+[更多教程](https://github.com/open-mmlab/OpenMMLabCourse)
