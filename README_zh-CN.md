@@ -214,6 +214,13 @@ MMEditing 是一款由不同学校和公司共同贡献的开源项目。我们�
 
 本项目开源自 [Apache 2.0 license](LICENSE)。
 
+## 教学视频
+
+[![底层视觉与 MMEditing（上）](https://i2.hdslb.com/bfs/archive/01d51d14a091e96f8c42031390f08f62cb18b699.png@336w_190h_1c.webp)](https://www.bilibili.com/video/BV1zq4y1o7ph/)
+[![底层视觉与 MMEditing（下）](https://i0.hdslb.com/bfs/archive/3c314ffc38bced8002162319cb75f883b4694445.png@336w_190h_1c.webp)](https://www.bilibili.com/video/BV1cQ4y167KL/)
+
+[更多教学视频](https://github.com/open-mmlab/OpenMMLabCourse)
+
 ## OpenMMLab 的其他项目
 
 - [MMCV](https://github.com/open-mmlab/mmcv): OpenMMLab 计算机视觉基础库
@@ -254,9 +261,3 @@ MMEditing 是一款由不同学校和公司共同贡献的开源项目。我们�
 - 🔥 提供与各行各业开发者充分交流的平台
 
 干货满满 📘，等你来撩 💗，OpenMMLab 社区期待您的加入 👬
-
-## 算法课程与代码教程
-
-[![底层视觉与 MMEditing（上）](https://i2.hdslb.com/bfs/archive/01d51d14a091e96f8c42031390f08f62cb18b699.png@336w_190h_1c.webp)](https://www.bilibili.com/video/BV1zq4y1o7ph/)
-[![底层视觉与 MMEditing（下）](https://i0.hdslb.com/bfs/archive/3c314ffc38bced8002162319cb75f883b4694445.png@336w_190h_1c.webp)]
-[更多教程](https://github.com/open-mmlab/OpenMMLabCourse)
